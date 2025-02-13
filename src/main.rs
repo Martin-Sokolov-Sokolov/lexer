@@ -1,11 +1,8 @@
-use std::default;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
 
 fn work_with_parenthesis(contents: &str) {
-    let mut res = String::new();
-
     for ch in contents.chars() {
         match ch {
             '(' => println!("LEFT_PAREN ( null"),
@@ -14,7 +11,7 @@ fn work_with_parenthesis(contents: &str) {
         }
     }
 
-    println!("EOF null");
+    println!("EOF  null");
 
 }
 
