@@ -3,20 +3,19 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
-fn work_with_parenthesis(contents: &str) -> String {
+fn work_with_parenthesis(contents: &str) {
     let mut res = String::new();
 
     for ch in contents.chars() {
         match ch {
-            '(' => res += "LEFT_PAREN ( null",
-            ')' => res += "RIGHT_PAREN ) null",
+            '(' => println!("LEFT_PAREN ( null"),
+            ')' => println!("RIGHT_PAREN ) null"),
             _ => (),
         }
     }
 
-    res += "EOF null";
+    println!("EOF null");
 
-    res
 }
 
 fn main() {
@@ -39,13 +38,8 @@ fn main() {
                 String::new()
             });
 
-            // Uncomment this block to pass the first stage
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                let pars = work_with_parenthesis(&file_contents);
-                println!("{pars} 123");
-            }
+            work_with_parenthesis(&file_contents);
+
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
