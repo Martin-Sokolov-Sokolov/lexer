@@ -1,6 +1,23 @@
+use std::default;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+
+fn work_with_parenthesis(contents: &str) -> String {
+    let mut res = String::new();
+
+    for ch in contents.chars() {
+        match ch {
+            '(' => res += "LEFT_PAREN ( null",
+            ')' => res += "RIGHT_PAREN ) null",
+            _ => (),
+        }
+    }
+
+    res += "EOF null";
+
+    res
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,7 +43,8 @@ fn main() {
             if !file_contents.is_empty() {
                 panic!("Scanner not implemented");
             } else {
-                println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
+                let pars = work_with_parenthesis(&file_contents);
+                println!("{pars} 123");
             }
         }
         _ => {
