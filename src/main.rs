@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+mod scanner;
 
 fn work_with_parenthesis(contents: &str) {
     for ch in contents.chars() {
