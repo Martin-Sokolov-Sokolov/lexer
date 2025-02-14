@@ -1,22 +1,8 @@
 use std::env;
+use std::fmt::Debug;
 use std::fs;
 use std::io::{self, Write};
 mod scanner;
-
-fn work_with_parenthesis(contents: &str) {
-    for ch in contents.chars() {
-        match ch {
-            '(' => println!("LEFT_PAREN ( null"),
-            ')' => println!("RIGHT_PAREN ) null"),
-            '{' => println!("RIGHT_BRACE  null"),
-            '}' => println!("LEFT_BRACE  null"),
-            _ => (),
-        }
-    }
-
-    println!("EOF null");
-
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -38,7 +24,11 @@ fn main() {
                 String::new()
             });
 
-            work_with_parenthesis(&file_contents);
+            let mut a = scanner::Scanner::new(file_contents);
+            a.scan_tokens();
+            for token in a.get_tokens() {
+                println!("{}", token);
+            }
 
         }
         _ => {
