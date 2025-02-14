@@ -8,6 +8,7 @@ fn work_with_parenthesis(contents: &str) {
         match ch {
             '(' => println!("LEFT_PAREN ( null"),
             ')' => println!("RIGHT_PAREN ) null"),
+            '{' => println!("RIGHT_PAREN  null"),
             _ => (),
         }
     }
