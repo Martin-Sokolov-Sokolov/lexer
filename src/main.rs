@@ -12,7 +12,7 @@ fn work_with_parenthesis(contents: &str) {
         }
     }
 
-    println!("EOF  null");
+    println!("EOF null");
 
 }
 
