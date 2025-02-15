@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::fmt;
+use std::{fmt, process};
 
 #[derive(Debug)]
 enum TokenType {
@@ -64,6 +64,7 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    errors: Vec<String>,
 }
 
 impl Scanner {
@@ -73,7 +74,8 @@ impl Scanner {
             tokens: Vec::new(),
             start: 0,
             current: 0,
-            line: 1
+            line: 1,
+            errors: Vec::new(),
         }
     }
 
@@ -96,7 +98,7 @@ impl Scanner {
             '-' => self.add_token(TokenType::Minus),
             ';' => self.add_token(TokenType::SemiColon),
             _ => {
-                eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
+                self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
             }
         }
     }
@@ -118,6 +120,13 @@ impl Scanner {
         }
 
         self.tokens.push(Token::new(TokenType::EOF, String::from(""), String::from("null"), self.line));
+
+        if !self.errors.is_empty() {
+            for err in &self.errors {
+                eprintln!("{}", err);
+            }
+            process::exit(65); // Exit with code 65 if errors are found
+        }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
