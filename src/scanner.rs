@@ -106,19 +106,19 @@ impl Scanner {
             '-' => self.add_token(TokenType::Minus),
             ';' => self.add_token(TokenType::SemiColon),
             '!' => {
-                let token_type = if !self.match_next(c) {TokenType::Bang} else {TokenType::BangEqual};
+                let token_type = if !self.match_next('=') {TokenType::Bang} else {TokenType::BangEqual};
                 self.add_token(token_type);
             }
             '=' => {
-                let token_type = if !self.match_next(c) {TokenType::Equal} else {TokenType::EqualEqual};
+                let token_type = if !self.match_next('=') {TokenType::Equal} else {TokenType::EqualEqual};
                 self.add_token(token_type);
             }
             '<' => {
-                let token_type = if !self.match_next(c) {TokenType::Less} else {TokenType::LessEqual};
+                let token_type = if !self.match_next('=') {TokenType::Less} else {TokenType::LessEqual};
                 self.add_token(token_type);
             }
             '>' => {
-                let token_type = if !self.match_next(c) {TokenType::Greater} else {TokenType::GreaterEqual};
+                let token_type = if !self.match_next('=') {TokenType::Greater} else {TokenType::GreaterEqual};
                 self.add_token(token_type);
             }
             '\n' => self.line += 1,
