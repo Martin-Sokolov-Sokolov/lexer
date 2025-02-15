@@ -113,7 +113,7 @@ impl Scanner {
             self.scan_token();
         }
 
-        self.tokens.push(Token::new(TokenType::EOF, String::from(" "), String::from("null"), self.line));
+        self.tokens.push(Token::new(TokenType::EOF, String::from(""), String::from("null"), self.line));
     }
 
     fn add_token(&mut self, token_type: TokenType) {
