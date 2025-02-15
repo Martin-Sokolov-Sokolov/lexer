@@ -1,13 +1,13 @@
-use core::panic;
 use std::fmt::Display;
 use std::fmt;
-use std::process;
 
 #[derive(Debug)]
 enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
     Star, Dot, Comma, Plus, Minus,
+
+    SemiColon,
 
     EOF
 }
@@ -24,6 +24,7 @@ impl Display for TokenType {
             TokenType::Comma => "COMMA",
             TokenType::Plus => "PLUS",
             TokenType::Minus => "MINUS",
+            TokenType::SemiColon => "SEMICOLON",
 
             TokenType::EOF => "EOF",
         };
@@ -93,6 +94,7 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             '.' => self.add_token(TokenType::Dot),
             '-' => self.add_token(TokenType::Minus),
+            ';' => self.add_token(TokenType::SemiColon),
             _ => {
                 eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
             }
