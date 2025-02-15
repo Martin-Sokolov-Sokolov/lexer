@@ -7,7 +7,7 @@ use std::process;
 enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
-    Star, Dot, Comma, Plus,
+    Star, Dot, Comma, Plus, Minus,
 
     EOF
 }
@@ -23,6 +23,7 @@ impl Display for TokenType {
             TokenType::Dot => "DOT",
             TokenType::Comma => "COMMA",
             TokenType::Plus => "PLUS",
+            TokenType::Minus => "MINUS",
 
             TokenType::EOF => "EOF",
         };
@@ -91,6 +92,7 @@ impl Scanner {
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
             '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
             _ => {
                 eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
             }
