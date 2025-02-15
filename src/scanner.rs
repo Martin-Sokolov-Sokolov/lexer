@@ -1,13 +1,14 @@
-use core::panic;
 use std::fmt::Display;
 use std::fmt;
-use std::process;
 
 #[derive(Debug)]
 enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
-    Star, Dot, Comma, Plus,
+    Star, Dot, Comma, Plus, Minus,
+    Bang, BangEqual, Equal, EqualEqual, Less, LessEqual, Greater, GreaterEqual,
+
+    SemiColon,
 
     EOF
 }
@@ -23,7 +24,16 @@ impl Display for TokenType {
             TokenType::Dot => "DOT",
             TokenType::Comma => "COMMA",
             TokenType::Plus => "PLUS",
-
+            TokenType::Minus => "MINUS",
+            TokenType::SemiColon => "SEMICOLON",
+            TokenType::Bang => "BANG",
+            TokenType::BangEqual => "BANG_EQUAL",
+            TokenType::Equal => "EQUAL",
+            TokenType::EqualEqual => "EQUAL_EQUAL",
+            TokenType::Less => "LESS",
+            TokenType::LessEqual => "LESS_EQUAL",
+            TokenType::Greater => "GREATER",
+            TokenType::GreaterEqual => "GREATER_EQUAL",
             TokenType::EOF => "EOF",
         };
         temp.fmt(f)
@@ -33,17 +43,15 @@ impl Display for TokenType {
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: String,
-    line: usize,
+    literal: String
 }
 
 impl Token {
-    fn new(token_type: TokenType, lexeme: String, literal: String, line: usize) -> Self {
+    fn new(token_type: TokenType, lexeme: String, literal: String) -> Self {
         Token {
             token_type,
             lexeme,
-            literal,
-            line
+            literal
         }
     }
 
@@ -62,6 +70,8 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    errors: Vec<String>,
+    pub code: i32,
 }
 
 impl Scanner {
@@ -71,7 +81,9 @@ impl Scanner {
             tokens: Vec::new(),
             start: 0,
             current: 0,
-            line: 1
+            line: 1,
+            errors: Vec::new(),
+            code: 0,
         }
     }
 
@@ -91,16 +103,43 @@ impl Scanner {
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
             '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
+            ';' => self.add_token(TokenType::SemiColon),
+            '!' => {
+                let token_type = if !self.match_next('=') {TokenType::Bang} else {TokenType::BangEqual};
+                self.add_token(token_type);
+            }
+            '=' => {
+                let token_type = if !self.match_next('=') {TokenType::Equal} else {TokenType::EqualEqual};
+                self.add_token(token_type);
+            }
+            '<' => {
+                let token_type = if !self.match_next('=') {TokenType::Less} else {TokenType::LessEqual};
+                self.add_token(token_type);
+            }
+            '>' => {
+                let token_type = if !self.match_next('=') {TokenType::Greater} else {TokenType::GreaterEqual};
+                self.add_token(token_type);
+            }
+            '\n' => self.line += 1,
             _ => {
-                eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
+                self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
             }
         }
+    }
+
+    fn match_next(&mut self, c: char) -> bool {
+        if self.is_at_end() || self.source.chars().nth(self.current).unwrap() != c {
+            return false;
+        }
+        self.current += 1;
+        return true;
     }
 
     fn advance (&mut self) -> char {
         let temp = self.current;
         self.current += 1;
-        self.source.chars().nth(temp).unwrap_or_else(|| 'a')
+        self.source.chars().nth(temp).unwrap()
     }
 
     fn is_at_end(&self) -> bool {
@@ -113,7 +152,14 @@ impl Scanner {
             self.scan_token();
         }
 
-        self.tokens.push(Token::new(TokenType::EOF, String::from(""), String::from("null"), self.line));
+        self.tokens.push(Token::new(TokenType::EOF, String::from(""), String::from("null")));
+
+        if !self.errors.is_empty() {
+            for err in &self.errors {
+                eprintln!("{}", err);
+            }
+            self.code = 65;
+        }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
@@ -122,7 +168,7 @@ impl Scanner {
 
     fn add_token_helper(&mut self, token_type: TokenType, literal: String) {
         let text = &self.source[self.start..self.current];
-        self.tokens.push(Token::new(token_type, String::from(text), literal, self.line));
+        self.tokens.push(Token::new(token_type, String::from(text), literal));
     }
 
 }

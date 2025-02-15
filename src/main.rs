@@ -1,7 +1,7 @@
 use std::env;
-use std::fmt::Debug;
 use std::fs;
 use std::io::{self, Write};
+use std::process;
 mod scanner;
 
 fn main() {
@@ -29,7 +29,7 @@ fn main() {
             for token in tokenizer.get_tokens() {
                 println!("{}", token);
             }
-
+            process::exit(tokenizer.code);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
