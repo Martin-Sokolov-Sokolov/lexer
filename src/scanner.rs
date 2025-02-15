@@ -65,6 +65,7 @@ pub struct Scanner {
     current: usize,
     line: usize,
     errors: Vec<String>,
+    pub code: i32,
 }
 
 impl Scanner {
@@ -76,6 +77,7 @@ impl Scanner {
             current: 0,
             line: 1,
             errors: Vec::new(),
+            code: 0,
         }
     }
 
@@ -125,7 +127,7 @@ impl Scanner {
             for err in &self.errors {
                 eprintln!("{}", err);
             }
-            process::exit(65); // Exit with code 65 if errors are found
+            self.code = 65;
         }
     }
 
