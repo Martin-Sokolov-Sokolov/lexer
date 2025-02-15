@@ -1,10 +1,13 @@
+use core::panic;
 use std::fmt::Display;
 use std::fmt;
-
+use std::process;
 
 #[derive(Debug)]
 enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
+
+    Star, Dot, Comma, Plus,
 
     EOF
 }
@@ -16,6 +19,11 @@ impl Display for TokenType {
             TokenType::RightParen => "RIGHT_PAREN",
             TokenType::LeftBrace => "LEFT_BRACE",
             TokenType::RightBrace => "RIGHT_BRACE",
+            TokenType::Star => "STAR",
+            TokenType::Dot => "DOT",
+            TokenType::Comma => "COMMA",
+            TokenType::Plus => "PLUS",
+
             TokenType::EOF => "EOF",
         };
         temp.fmt(f)
@@ -79,14 +87,20 @@ impl Scanner {
             ')' => self.add_token(TokenType::RightParen),
             '{' => self.add_token(TokenType::LeftBrace),
             '}' => self.add_token(TokenType::RightBrace),
-            _ => panic!("No such character found in dictionary!")
+            '*' => self.add_token(TokenType::Star),
+            ',' => self.add_token(TokenType::Comma),
+            '+' => self.add_token(TokenType::Plus),
+            '.' => self.add_token(TokenType::Dot),
+            _ => {
+                eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
+            }
         }
     }
 
     fn advance (&mut self) -> char {
         let temp = self.current;
         self.current += 1;
-        self.source.chars().nth(temp).unwrap()
+        self.source.chars().nth(temp).unwrap_or_else(|| 'a')
     }
 
     fn is_at_end(&self) -> bool {

@@ -24,9 +24,9 @@ fn main() {
                 String::new()
             });
 
-            let mut a = scanner::Scanner::new(file_contents);
-            a.scan_tokens();
-            for token in a.get_tokens() {
+            let mut tokenizer = scanner::Scanner::new(file_contents);
+            tokenizer.scan_tokens();
+            for token in tokenizer.get_tokens() {
                 println!("{}", token);
             }
 
