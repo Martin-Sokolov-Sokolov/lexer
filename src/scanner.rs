@@ -127,7 +127,7 @@ impl Scanner {
             }
             '/' => {
                 if self.match_next('/') {
-                    while self.peek() != '\n' && self.peek() != '\0' && !self.is_at_end() {
+                    while !self.is_at_end() && self.peek() != '\n' {
                         self.advance();
                     }
                 }
@@ -161,9 +161,6 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
-        if self.is_at_end() {
-            return '\0';
-        }
         self.source.chars().nth(self.current).unwrap_or_else(|| return '\0')
     }
 
