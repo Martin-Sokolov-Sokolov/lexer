@@ -127,7 +127,7 @@ impl Scanner {
             }
             '/' => {
                 if self.match_next('/') {
-                    while self.peek() != '\n' && !self.is_at_end() {
+                    while self.peek() != '\n' && self.peek() != '\0' && !self.is_at_end() {
                         self.advance();
                     }
                 }
@@ -143,7 +143,7 @@ impl Scanner {
     }
 
     fn match_next(&mut self, c: char) -> bool {
-        if self.is_at_end() || self.source.chars().nth(self.current).unwrap() != c {
+        if self.is_at_end() || self.source.chars().nth(self.current).unwrap_or_else(|| return '\0') != c {
             return false;
         }
         self.current += 1;
@@ -153,7 +153,7 @@ impl Scanner {
     fn advance (&mut self) -> char {
         let temp = self.current;
         self.current += 1;
-        self.source.chars().nth(temp).unwrap()
+        self.source.chars().nth(temp).unwrap_or_else(|| return '\0')
     }
 
     fn is_at_end(&self) -> bool {
@@ -164,7 +164,7 @@ impl Scanner {
         if self.is_at_end() {
             return '\0';
         }
-        self.source.chars().nth(self.current).unwrap()
+        self.source.chars().nth(self.current).unwrap_or_else(|| return '\0')
     }
 
     pub fn scan_tokens(&mut self) {
