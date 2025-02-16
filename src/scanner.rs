@@ -8,6 +8,8 @@ enum TokenType {
     Star, Dot, Comma, Plus, Minus,
     Bang, BangEqual, Equal, EqualEqual, Less, LessEqual, Greater, GreaterEqual,
 
+    Slash,
+
     SemiColon,
 
     EOF
@@ -34,6 +36,8 @@ impl Display for TokenType {
             TokenType::LessEqual => "LESS_EQUAL",
             TokenType::Greater => "GREATER",
             TokenType::GreaterEqual => "GREATER_EQUAL",
+            TokenType::Slash => "SLASH",
+            
             TokenType::EOF => "EOF",
         };
         temp.fmt(f)
@@ -121,6 +125,16 @@ impl Scanner {
                 let token_type = if !self.match_next('=') {TokenType::Greater} else {TokenType::GreaterEqual};
                 self.add_token(token_type);
             }
+            '/' => {
+                if self.match_next('/') {
+                    while !self.is_at_end() && self.peek() != '\n' {
+                        self.advance();
+                    }
+                }
+                else {
+                    self.add_token(TokenType::Slash);
+                }
+            }
             '\n' => self.line += 1,
             _ => {
                 self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
@@ -129,7 +143,7 @@ impl Scanner {
     }
 
     fn match_next(&mut self, c: char) -> bool {
-        if self.is_at_end() || self.source.chars().nth(self.current).unwrap() != c {
+        if self.is_at_end() || self.source.chars().nth(self.current).unwrap_or_else(|| return '\0') != c {
             return false;
         }
         self.current += 1;
@@ -139,11 +153,15 @@ impl Scanner {
     fn advance (&mut self) -> char {
         let temp = self.current;
         self.current += 1;
-        self.source.chars().nth(temp).unwrap()
+        self.source.chars().nth(temp).unwrap_or_else(|| return '\0')
     }
 
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+
+    fn peek(&self) -> char {
+        self.source.chars().nth(self.current).unwrap_or_else(|| return '\0')
     }
 
     pub fn scan_tokens(&mut self) {
