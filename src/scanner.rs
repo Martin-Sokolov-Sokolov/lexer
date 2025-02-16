@@ -8,6 +8,8 @@ enum TokenType {
     Star, Dot, Comma, Plus, Minus,
     Bang, BangEqual, Equal, EqualEqual, Less, LessEqual, Greater, GreaterEqual,
 
+    Slash,
+
     SemiColon,
 
     EOF
@@ -34,6 +36,8 @@ impl Display for TokenType {
             TokenType::LessEqual => "LESS_EQUAL",
             TokenType::Greater => "GREATER",
             TokenType::GreaterEqual => "GREATER_EQUAL",
+            TokenType::Slash => "SLASH",
+            
             TokenType::EOF => "EOF",
         };
         temp.fmt(f)
@@ -121,6 +125,16 @@ impl Scanner {
                 let token_type = if !self.match_next('=') {TokenType::Greater} else {TokenType::GreaterEqual};
                 self.add_token(token_type);
             }
+            '/' => {
+                if self.match_next('/') {
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                }
+                else {
+                    self.add_token(TokenType::Slash);
+                }
+            }
             '\n' => self.line += 1,
             _ => {
                 self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
@@ -144,6 +158,13 @@ impl Scanner {
 
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            return '\0';
+        }
+        self.source.chars().nth(self.current).unwrap()
     }
 
     pub fn scan_tokens(&mut self) {
