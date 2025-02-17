@@ -136,9 +136,13 @@ impl Scanner {
                 }
             }
             '\n' => self.line += 1,
+            ' ' => (),
+            '\r' => (),
+            '\t' => (),
             _ => {
                 self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
             }
+
         }
     }
 
