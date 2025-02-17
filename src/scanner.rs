@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::fmt;
 
+
 #[derive(Debug)]
 enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -11,6 +12,8 @@ enum TokenType {
     Slash,
 
     SemiColon,
+
+    String,
 
     EOF
 }
@@ -37,6 +40,7 @@ impl Display for TokenType {
             TokenType::Greater => "GREATER",
             TokenType::GreaterEqual => "GREATER_EQUAL",
             TokenType::Slash => "SLASH",
+            TokenType::String => "STRING",
             
             TokenType::EOF => "EOF",
         };
@@ -139,6 +143,14 @@ impl Scanner {
             ' ' => (),
             '\r' => (),
             '\t' => (),
+            '"' => {
+                if let Ok(result) = self.make_string() {
+                    self.add_token_helper(TokenType::String, result);
+                }
+                else {
+                    self.errors.push(format!("[line {}] Error: Unterminated string.", self.line));
+                }
+            },
             _ => {
                 self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
             }
@@ -191,6 +203,23 @@ impl Scanner {
     fn add_token_helper(&mut self, token_type: TokenType, literal: String) {
         let text = &self.source[self.start..self.current];
         self.tokens.push(Token::new(token_type, String::from(text), literal));
+    }
+
+    fn make_string(&mut self) -> Result<String, ()> {
+        let mut res = String::new();
+
+        while !self.is_at_end() && self.peek() != '"' {
+            let c = self.advance();
+            res.push(c);
+        }
+
+        if self.is_at_end() {
+            return Err(())
+        }
+        else {
+            self.advance();
+            Ok(res)
+        }
     }
 
 }
