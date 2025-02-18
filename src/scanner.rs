@@ -13,7 +13,7 @@ enum TokenType {
 
     SemiColon,
 
-    String,
+    String, Number,
 
     EOF
 }
@@ -41,6 +41,7 @@ impl Display for TokenType {
             TokenType::GreaterEqual => "GREATER_EQUAL",
             TokenType::Slash => "SLASH",
             TokenType::String => "STRING",
+            TokenType::Number => "NUMBER",
             
             TokenType::EOF => "EOF",
         };
@@ -103,6 +104,7 @@ impl Scanner {
         let c = self.advance();
 
         match c {
+
             '(' => self.add_token(TokenType::LeftParen),
             ')' => self.add_token(TokenType::RightParen),
             '{' => self.add_token(TokenType::LeftBrace),
@@ -110,7 +112,14 @@ impl Scanner {
             '*' => self.add_token(TokenType::Star),
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
-            '.' => self.add_token(TokenType::Dot),
+            '.' => {
+                if self.is_digit(self.peek_next()) {
+                    self.errors.push(format!("asd"));
+                }
+                else {
+                    self.add_token(TokenType::Dot);
+                }
+            },
             '-' => self.add_token(TokenType::Minus),
             ';' => self.add_token(TokenType::SemiColon),
             '!' => {
@@ -143,14 +152,8 @@ impl Scanner {
             ' ' => (),
             '\r' => (),
             '\t' => (),
-            '"' => {
-                if let Ok(result) = self.make_string() {
-                    self.add_token_helper(TokenType::String, result);
-                }
-                else {
-                    self.errors.push(format!("[line {}] Error: Unterminated string.", self.line));
-                }
-            },
+            '"' => self.make_string(),
+            '0'..'9' => self.number(),
             _ => {
                 self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
             }
@@ -205,7 +208,7 @@ impl Scanner {
         self.tokens.push(Token::new(token_type, String::from(text), literal));
     }
 
-    fn make_string(&mut self) -> Result<String, ()> {
+    fn make_string(&mut self) {
         let mut res = String::new();
 
         while !self.is_at_end() && self.peek() != '"' {
@@ -214,12 +217,55 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            return Err(())
+            self.errors.push(format!("[line {}] Error: Unterminated string.", self.line));
         }
         else {
             self.advance();
-            Ok(res)
+            self.add_token_helper(TokenType::String, res);
         }
+    }
+
+    fn number(&mut self) {
+        self.current -= 1;
+        let mut res = String::new();
+        while !self.is_at_end() && self.is_digit(self.peek()) {
+            let c = self.advance();
+            res.push(c);
+        }
+
+        if self.peek() == '.' {
+            if self.is_digit(self.peek_next()) {
+                let dot = self.advance();
+                res.push(dot);
+
+                while !self.is_at_end() && self.is_digit(self.peek()) {
+                    let float_part = self.advance();
+                    res.push(float_part);
+                }
+
+                self.add_token_helper(TokenType::Number, res);
+            }
+            else {
+                self.errors.push(format!("{} Error", 1));
+            }
+        }
+        else {
+            let add_float_part = res + ".0";
+            self.add_token_helper(TokenType::Number, add_float_part);
+        }
+    }
+
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        else {
+            return self.source.chars().nth(self.current+1).unwrap();
+        }
+    }
+
+    fn is_digit(&self, c: char) -> bool {
+        c >= '1' && c <= '9'
     }
 
 }
