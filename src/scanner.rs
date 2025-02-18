@@ -113,7 +113,7 @@ impl Scanner {
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
             '.' => {
-                if self.is_digit(self.peek_next()) {
+                if is_digit(self.peek_next()) {
                     self.errors.push(format!("asd"));
                 }
                 else {
@@ -228,22 +228,23 @@ impl Scanner {
     fn number(&mut self) {
         self.current -= 1;
         let mut res = String::new();
-        while !self.is_at_end() && self.is_digit(self.peek()) {
+        while !self.is_at_end() && is_digit(self.peek()) {
             let c = self.advance();
             res.push(c);
         }
 
         if self.peek() == '.' {
-            if self.is_digit(self.peek_next()) {
+            if is_digit(self.peek_next()) {
                 let dot = self.advance();
                 res.push(dot);
 
-                while !self.is_at_end() && self.is_digit(self.peek()) {
+                while !self.is_at_end() && is_digit(self.peek()) {
                     let float_part = self.advance();
                     res.push(float_part);
                 }
 
-                self.add_token_helper(TokenType::Number, res);
+                let fix_num = trim_excessive_zeros(&res);
+                self.add_token_helper(TokenType::Number, fix_num);
             }
             else {
                 self.errors.push(format!("{} Error", 1));
@@ -264,8 +265,22 @@ impl Scanner {
         }
     }
 
-    fn is_digit(&self, c: char) -> bool {
-        c >= '0' && c <= '9'
+
+
+}
+
+fn trim_excessive_zeros(num_str: &str) -> String {
+    let mut trimmed = num_str.trim_end_matches('0').to_string();
+    
+    if let Some(dot_index) = trimmed.find('.') {
+        if dot_index == trimmed.len() - 1 {
+            trimmed.push('0');
+        }
     }
 
+    trimmed
+}
+
+fn is_digit(c: char) -> bool {
+    c >= '0' && c <= '9'
 }
