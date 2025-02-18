@@ -153,9 +153,13 @@ impl Scanner {
             '\r' => (),
             '\t' => (),
             '"' => self.make_string(),
-            '0'..'9' => self.number(),
             _ => {
-                self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
+                if is_digit(c) {
+                    self.number();
+                }
+                else {
+                    self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
+                }
             }
 
         }
