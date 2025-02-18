@@ -265,7 +265,7 @@ impl Scanner {
     }
 
     fn is_digit(&self, c: char) -> bool {
-        c >= '1' && c <= '9'
+        c >= '0' && c <= '9'
     }
 
 }
