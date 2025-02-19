@@ -2,19 +2,46 @@ use std::fmt::Display;
 use std::fmt;
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum TokenType {
-    LeftParen, RightParen, LeftBrace, RightBrace,
-
-    Star, Dot, Comma, Plus, Minus,
-    Bang, BangEqual, Equal, EqualEqual, Less, LessEqual, Greater, GreaterEqual,
-
-    Slash,
-
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
     SemiColon,
-
-    String, Number,
-
+    Star,
+    BangEqual,
+    EqualEqual,
+    LessEqual,
+    GreaterEqual,
+    Less,
+    Greater,
+    Slash,
+    Bang,
+    Equal,
+    String,
+    Identifier,
+    Number,
+    And,
+    Class,
+    Else,
+    False,
+    For,
+    Fun,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
     EOF
 }
 
@@ -42,8 +69,25 @@ impl Display for TokenType {
             TokenType::Slash => "SLASH",
             TokenType::String => "STRING",
             TokenType::Number => "NUMBER",
-            
-            TokenType::EOF => "EOF",
+            TokenType::Identifier => "IDENTIFIER",
+            TokenType::Fun => "FUN",
+            TokenType::And => "AND",
+            TokenType::Class => "CLASS",
+            TokenType::Else => "ELSE",
+            TokenType::False => "FALSE",
+            TokenType::For => "FOR",
+            TokenType::If => "IF",
+            TokenType::Nil => "NIL",
+            TokenType::Or => "OR",
+            TokenType::Print => "PRINT",
+            TokenType::Return => "RETURN",
+            TokenType::Super => "SUPER",
+            TokenType::This => "THIS",
+            TokenType::True => "TRUE",
+            TokenType::Var => "VAR",
+            TokenType::While => "WHILE",
+
+            TokenType::EOF => "EOF"
         };
         temp.fmt(f)
     }
@@ -112,14 +156,7 @@ impl Scanner {
             '*' => self.add_token(TokenType::Star),
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
-            '.' => {
-                if is_digit(self.peek_next()) {
-                    self.errors.push(format!("asd"));
-                }
-                else {
-                    self.add_token(TokenType::Dot);
-                }
-            },
+            '.' => self.add_token(TokenType::Dot),
             '-' => self.add_token(TokenType::Minus),
             ';' => self.add_token(TokenType::SemiColon),
             '!' => {
@@ -153,15 +190,9 @@ impl Scanner {
             '\r' => (),
             '\t' => (),
             '"' => self.make_string(),
-            _ => {
-                if is_digit(c) {
-                    self.number();
-                }
-                else {
-                    self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
-                }
-            }
-
+            '0'..='9' => self.number(),
+            'a'..='z' | 'A'..='Z' | '_' => self.make_identifier(),
+            _ => self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c)),
         }
     }
 
@@ -223,6 +254,7 @@ impl Scanner {
         if self.is_at_end() {
             self.errors.push(format!("[line {}] Error: Unterminated string.", self.line));
         }
+
         else {
             self.advance();
             self.add_token_helper(TokenType::String, res);
@@ -230,34 +262,25 @@ impl Scanner {
     }
 
     fn number(&mut self) {
-        self.current -= 1;
-        let mut res = String::new();
         while !self.is_at_end() && is_digit(self.peek()) {
-            let c = self.advance();
-            res.push(c);
+            self.advance();
         }
 
         if self.peek() == '.' {
             if is_digit(self.peek_next()) {
-                let dot = self.advance();
-                res.push(dot);
+                self.advance();
 
                 while !self.is_at_end() && is_digit(self.peek()) {
-                    let float_part = self.advance();
-                    res.push(float_part);
+                    self.advance();
                 }
 
-                let fix_num = trim_excessive_zeros(&res);
-                self.add_token_helper(TokenType::Number, fix_num);
             }
-            else {
-                self.errors.push(format!("{} Error", 1));
-            }
+
         }
-        else {
-            let add_float_part = res + ".0";
-            self.add_token_helper(TokenType::Number, add_float_part);
-        }
+
+        let num_str = &self.source[self.start..self.current];
+        let num = normalize_number_string(num_str);
+        self.add_token_helper(TokenType::Number, num);
     }
 
     fn peek_next(&self) -> char {
@@ -269,22 +292,62 @@ impl Scanner {
         }
     }
 
+    fn make_identifier(&mut self) {
+        
+        while !self.is_at_end() && is_alpha_numric(self.peek()) {
+            self.advance();
+        }
+
+        let ident = &self.source[self.start..self.current];
+
+        let kind = match ident {
+            "and" => TokenType::And,
+            "class" => TokenType::Class,
+            "else" => TokenType::Else,
+            "false" => TokenType::False,
+            "for" => TokenType::For,
+            "fun" => TokenType::Fun,
+            "if" => TokenType::If,
+            "nil" => TokenType::Nil,
+            "or" => TokenType::Or,
+            "print" => TokenType::Print,
+            "return" => TokenType::Return,
+            "super" => TokenType::Super,
+            "this" => TokenType::This,
+            "true" => TokenType::True,
+            "var" => TokenType::Var,
+            "while" => TokenType::While,
+            _ => TokenType::Identifier,
+        };
+
+        self.add_token(kind);
+
+    }
 
 
 }
 
-fn trim_excessive_zeros(num_str: &str) -> String {
-    let mut trimmed = num_str.trim_end_matches('0').to_string();
-    
-    if let Some(dot_index) = trimmed.find('.') {
-        if dot_index == trimmed.len() - 1 {
-            trimmed.push('0');
+fn normalize_number_string(num_str: &str) -> String {
+    match num_str.parse::<f64>() {
+        Ok(num) => {
+            if num.fract() == 0.0 {
+                format!("{:.1}", num)
+            } else {
+                num.to_string()
+            }
         }
+        Err(_) => num_str.to_string(),
     }
-
-    trimmed
 }
 
 fn is_digit(c: char) -> bool {
     c >= '0' && c <= '9'
+}
+
+fn is_alpha(c: char) -> bool {
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_';
+}
+
+fn is_alpha_numric(c: char) -> bool {
+    is_digit(c) || is_alpha(c)
 }
