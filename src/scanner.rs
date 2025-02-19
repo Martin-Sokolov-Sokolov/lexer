@@ -2,19 +2,46 @@ use std::fmt::Display;
 use std::fmt;
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum TokenType {
-    LeftParen, RightParen, LeftBrace, RightBrace,
-
-    Star, Dot, Comma, Plus, Minus,
-    Bang, BangEqual, Equal, EqualEqual, Less, LessEqual, Greater, GreaterEqual,
-
-    Slash,
-
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
     SemiColon,
-
-    String, Number, Identifier,
-
+    Star,
+    BangEqual,
+    EqualEqual,
+    LessEqual,
+    GreaterEqual,
+    Less,
+    Greater,
+    Slash,
+    Bang,
+    Equal,
+    String,
+    Identifier,
+    Number,
+    And,
+    Class,
+    Else,
+    False,
+    For,
+    Fun,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
     EOF
 }
 
@@ -43,8 +70,24 @@ impl Display for TokenType {
             TokenType::String => "STRING",
             TokenType::Number => "NUMBER",
             TokenType::Identifier => "IDENTIFIER",
-            
-            TokenType::EOF => "EOF",
+            TokenType::Fun => "FUN",
+            TokenType::And => "AND",
+            TokenType::Class => "CLASS",
+            TokenType::Else => "ELSE",
+            TokenType::False => "FALSE",
+            TokenType::For => "FOR",
+            TokenType::If => "IF",
+            TokenType::Nil => "NIL",
+            TokenType::Or => "OR",
+            TokenType::Print => "PRINT",
+            TokenType::Return => "RETURN",
+            TokenType::Super => "SUPER",
+            TokenType::This => "THIS",
+            TokenType::True => "TRUE",
+            TokenType::Var => "VAR",
+            TokenType::While => "WHILE",
+
+            TokenType::EOF => "EOF"
         };
         temp.fmt(f)
     }
@@ -211,6 +254,7 @@ impl Scanner {
         if self.is_at_end() {
             self.errors.push(format!("[line {}] Error: Unterminated string.", self.line));
         }
+
         else {
             self.advance();
             self.add_token_helper(TokenType::String, res);
@@ -254,7 +298,30 @@ impl Scanner {
             self.advance();
         }
 
-        self.add_token(TokenType::Identifier);
+        let ident = &self.source[self.start..self.current];
+
+        let kind = match ident {
+            "and" => TokenType::And,
+            "class" => TokenType::Class,
+            "else" => TokenType::Else,
+            "false" => TokenType::False,
+            "for" => TokenType::For,
+            "fun" => TokenType::Fun,
+            "if" => TokenType::If,
+            "nil" => TokenType::Nil,
+            "or" => TokenType::Or,
+            "print" => TokenType::Print,
+            "return" => TokenType::Return,
+            "super" => TokenType::Super,
+            "this" => TokenType::This,
+            "true" => TokenType::True,
+            "var" => TokenType::Var,
+            "while" => TokenType::While,
+            _ => TokenType::Identifier,
+        };
+
+        self.add_token(kind);
+
     }
 
 
