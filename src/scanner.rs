@@ -13,7 +13,7 @@ enum TokenType {
 
     SemiColon,
 
-    String, Number,
+    String, Number, Identifier,
 
     EOF
 }
@@ -42,6 +42,7 @@ impl Display for TokenType {
             TokenType::Slash => "SLASH",
             TokenType::String => "STRING",
             TokenType::Number => "NUMBER",
+            TokenType::Identifier => "IDENTIFIER",
             
             TokenType::EOF => "EOF",
         };
@@ -153,15 +154,9 @@ impl Scanner {
             '\r' => (),
             '\t' => (),
             '"' => self.make_string(),
-            _ => {
-                if is_digit(c) {
-                    self.number();
-                }
-                else {
-                    self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c));
-                }
-            }
-
+            '0'..='9' => self.number(),
+            'a'..='z' | 'A'..='Z' | '_' => self.make_identifier(),
+            _ => self.errors.push(format!("[line {}] Error: Unexpected character: {}", self.line, c)),
         }
     }
 
@@ -269,6 +264,15 @@ impl Scanner {
         }
     }
 
+    fn make_identifier(&mut self) {
+        self.current -= 1;
+
+        while !self.is_at_end() && is_alpha_numric(self.peek()) {
+            self.advance();
+        }
+
+        self.add_token(TokenType::Identifier);
+    }
 
 
 }
@@ -287,4 +291,12 @@ fn trim_excessive_zeros(num_str: &str) -> String {
 
 fn is_digit(c: char) -> bool {
     c >= '0' && c <= '9'
+}
+
+fn is_alpha(c: char) -> bool {
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_';
+}
+
+fn is_alpha_numric(c: char) -> bool {
+    is_digit(c) || is_alpha(c)
 }
