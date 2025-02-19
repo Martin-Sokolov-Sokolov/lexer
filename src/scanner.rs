@@ -113,14 +113,7 @@ impl Scanner {
             '*' => self.add_token(TokenType::Star),
             ',' => self.add_token(TokenType::Comma),
             '+' => self.add_token(TokenType::Plus),
-            '.' => {
-                if is_digit(self.peek_next()) {
-                    self.errors.push(format!("asd"));
-                }
-                else {
-                    self.add_token(TokenType::Dot);
-                }
-            },
+            '.' => self.add_token(TokenType::Dot),
             '-' => self.add_token(TokenType::Minus),
             ';' => self.add_token(TokenType::SemiColon),
             '!' => {
@@ -225,34 +218,25 @@ impl Scanner {
     }
 
     fn number(&mut self) {
-        self.current -= 1;
-        let mut res = String::new();
         while !self.is_at_end() && is_digit(self.peek()) {
-            let c = self.advance();
-            res.push(c);
+            self.advance();
         }
 
         if self.peek() == '.' {
             if is_digit(self.peek_next()) {
-                let dot = self.advance();
-                res.push(dot);
+                self.advance();
 
                 while !self.is_at_end() && is_digit(self.peek()) {
-                    let float_part = self.advance();
-                    res.push(float_part);
+                    self.advance();
                 }
 
-                let fix_num = trim_excessive_zeros(&res);
-                self.add_token_helper(TokenType::Number, fix_num);
             }
-            else {
-                self.errors.push(format!("{} Error", 1));
-            }
+
         }
-        else {
-            let add_float_part = res + ".0";
-            self.add_token_helper(TokenType::Number, add_float_part);
-        }
+
+        let num_str = &self.source[self.start..self.current];
+        let num = normalize_number_string(num_str);
+        self.add_token_helper(TokenType::Number, num);
     }
 
     fn peek_next(&self) -> char {
@@ -265,8 +249,7 @@ impl Scanner {
     }
 
     fn make_identifier(&mut self) {
-        self.current -= 1;
-
+        
         while !self.is_at_end() && is_alpha_numric(self.peek()) {
             self.advance();
         }
@@ -277,16 +260,17 @@ impl Scanner {
 
 }
 
-fn trim_excessive_zeros(num_str: &str) -> String {
-    let mut trimmed = num_str.trim_end_matches('0').to_string();
-    
-    if let Some(dot_index) = trimmed.find('.') {
-        if dot_index == trimmed.len() - 1 {
-            trimmed.push('0');
+fn normalize_number_string(num_str: &str) -> String {
+    match num_str.parse::<f64>() {
+        Ok(num) => {
+            if num.fract() == 0.0 {
+                format!("{:.1}", num)
+            } else {
+                num.to_string()
+            }
         }
+        Err(_) => num_str.to_string(),
     }
-
-    trimmed
 }
 
 fn is_digit(c: char) -> bool {
