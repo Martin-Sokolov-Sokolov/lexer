@@ -201,7 +201,7 @@ impl Scanner {
                     token
                 }
                 else {
-                    return Err(String::from("error"));
+                    return Err(format!("[line {}] Error: Unterminated string", self.line));
                 }
             }
             '0'..='9' => {
@@ -221,7 +221,7 @@ impl Scanner {
                 }
             }
 
-            _ => return Err(String::from("last error")),
+            _ => return Err(format!("[line {}]: Error: Unexpected character: {}", self.line, c)),
         };
 
         Ok(res)

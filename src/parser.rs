@@ -48,5 +48,40 @@ impl Parser {
             current: 0,
         }
     }
+
+    fn expression(&self) -> Expr {
+        self.equality()
+    }
+
+    fn equality(&self) -> Expr {
+        let expr = self.comparison();
+
+
+        expr
+    }
+
+    fn comparison(&self) -> Expr {
+        let expr = self.term();
+
+        expr
+    }
+
+    fn term(&self) -> Expr {
+        let expr = self.factor();
+
+        expr
+    }
+
+    fn factor(&self) -> Expr {
+        let expr = self.unary();
+
+        expr
+    }
+
+    fn unary(&self) -> Expr {
+        Expr::BinaryOp
+    }
+
 }
+
 

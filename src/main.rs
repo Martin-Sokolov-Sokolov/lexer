@@ -33,7 +33,7 @@ fn main() {
                         }
                     }
                     Err(err) => {
-                        eprint!("{}", err);
+                        eprintln!("{}", err);
                         code = 65;
                     }
                 }
