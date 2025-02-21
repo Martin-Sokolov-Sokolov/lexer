@@ -91,7 +91,7 @@ impl Display for TokenType {
         temp.fmt(f)
     }
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,

@@ -38,7 +38,7 @@ enum Literal {
 #[derive(Debug)]
 struct Parser {
     tokens: Vec<Token>,
-    current: i32,
+    current: usize,
 }
 
 impl Parser {
@@ -80,6 +80,19 @@ impl Parser {
 
     fn unary(&self) -> Expr {
         Expr::BinaryOp
+    }
+
+    fn check(&self, to_compare: Token) -> bool {
+        if self.is_at_end() || self.tokens[self.current] != to_compare {
+            false
+        }
+        else {
+            true
+        }
+    }
+
+    fn is_at_end(&self) -> bool{
+        self.current >= self.tokens.len()
     }
 
 }
