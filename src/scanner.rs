@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use std::any::Any;
+use std::borrow::Cow;
 use std::fmt;
 
 
@@ -25,7 +26,7 @@ pub enum TokenType {
     Equal,
     String,
     Identifier,
-    Number,
+    Number(f64),
     And,
     Class,
     Else,
@@ -45,68 +46,72 @@ pub enum TokenType {
     Empty
 }
 
-impl Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let temp = match self {
-            TokenType::LeftParen => "LEFT_PAREN",
-            TokenType::RightParen => "RIGHT_PAREN",
-            TokenType::LeftBrace => "LEFT_BRACE",
-            TokenType::RightBrace => "RIGHT_BRACE",
-            TokenType::Star => "STAR",
-            TokenType::Dot => "DOT",
-            TokenType::Comma => "COMMA",
-            TokenType::Plus => "PLUS",
-            TokenType::Minus => "MINUS",
-            TokenType::SemiColon => "SEMICOLON",
-            TokenType::Bang => "BANG",
-            TokenType::BangEqual => "BANG_EQUAL",
-            TokenType::Equal => "EQUAL",
-            TokenType::EqualEqual => "EQUAL_EQUAL",
-            TokenType::Less => "LESS",
-            TokenType::LessEqual => "LESS_EQUAL",
-            TokenType::Greater => "GREATER",
-            TokenType::GreaterEqual => "GREATER_EQUAL",
-            TokenType::Slash => "SLASH",
-            TokenType::String => "STRING",
-            TokenType::Number => "NUMBER",
-            TokenType::Identifier => "IDENTIFIER",
-            TokenType::Fun => "FUN",
-            TokenType::And => "AND",
-            TokenType::Class => "CLASS",
-            TokenType::Else => "ELSE",
-            TokenType::False => "FALSE",
-            TokenType::For => "FOR",
-            TokenType::If => "IF",
-            TokenType::Nil => "NIL",
-            TokenType::Or => "OR",
-            TokenType::Print => "PRINT",
-            TokenType::Return => "RETURN",
-            TokenType::Super => "SUPER",
-            TokenType::This => "THIS",
-            TokenType::True => "TRUE",
-            TokenType::Var => "VAR",
-            TokenType::While => "WHILE",
-            TokenType::Empty => "",
-        };
-        temp.fmt(f)
-    }
-}
-#[derive(Debug)]
 pub struct Token {
-    token_type: TokenType,
+    pub token_type: TokenType,
     lexeme: String,
-    literal: String
+    pub literal: Option<Box<dyn Any>>,
 }
 
 impl Token {
     pub fn is_empty(&self) -> bool {
         return self.token_type == TokenType::Empty;
     }
+
+    pub fn unescape(s: & str) -> Cow<str> {
+        Cow::Borrowed(s.trim_matches('"'))
+    }
 }
 
-impl Display for Token {
+impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        format!("{} {} {}", self.token_type, self.lexeme, self.literal).fmt(f)
+        let origin = self.lexeme.clone();
+        match self.token_type {
+            TokenType::LeftParen => write!(f, "LEFT_PAREN {origin} null"),
+            TokenType::RightParen => write!(f, "RIGHT_PAREN {origin} null"),
+            TokenType::LeftBrace => write!(f, "LEFT_BRACE {origin} null"),
+            TokenType::RightBrace => write!(f, "RIGHT_BRACE {origin} null"),
+            TokenType::Comma => write!(f, "COMMA {origin} null"),
+            TokenType::Dot => write!(f, "DOT {origin} null"),
+            TokenType::Minus => write!(f, "MINUS {origin} null"),
+            TokenType::Plus => write!(f, "PLUS {origin} null"),
+            TokenType::SemiColon => write!(f, "SEMICOLON {origin} null"),
+            TokenType::Star => write!(f, "STAR {origin} null"),
+            TokenType::BangEqual => write!(f, "BANG_EQUAL {origin} null"),
+            TokenType::EqualEqual => write!(f, "EQUAL_EQUAL {origin} null"),
+            TokenType::LessEqual => write!(f, "LESS_EQUAL {origin} null"),
+            TokenType::GreaterEqual => write!(f, "GREATER_EQUAL {origin} null"),
+            TokenType::Less => write!(f, "LESS {origin} null"),
+            TokenType::Greater => write!(f, "GREATER {origin} null"),
+            TokenType::Slash => write!(f, "SLASH {origin} null"),
+            TokenType::Bang => write!(f, "BANG {origin} null"),
+            TokenType::Equal => write!(f, "EQUAL {origin} null"),
+            TokenType::String => write!(f, "STRING {origin} {}", Token::unescape(&origin)),
+            TokenType::Identifier => write!(f, "IDENTIFIER {origin} null"),
+            TokenType::Number(n) => {
+                if n == n.trunc() {
+                    write!(f, "NUMBER {origin} {n}.0")
+                } else {
+                    write!(f, "NUMBER {origin} {n}")
+                }
+            }
+            TokenType::And => write!(f, "AND {origin} null"),
+            TokenType::Class => write!(f, "CLASS {origin} null"),
+            TokenType::Else => write!(f, "ELSE {origin} null"),
+            TokenType::False => write!(f, "FALSE {origin} null"),
+            TokenType::For => write!(f, "FOR {origin} null"),
+            TokenType::Fun => write!(f, "FUN {origin} null"),
+            TokenType::If => write!(f, "IF {origin} null"),
+            TokenType::Nil => write!(f, "NIL {origin} null"),
+            TokenType::Or => write!(f, "OR {origin} null"),
+            TokenType::Print => write!(f, "PRINT {origin} null"),
+            TokenType::Return => write!(f, "RETURN {origin} null"),
+            TokenType::Super => write!(f, "SUPER {origin} null"),
+            TokenType::This => write!(f, "THIS {origin} null"),
+            TokenType::True => write!(f, "TRUE {origin} null"),
+            TokenType::Var => write!(f, "VAR {origin} null"),
+            TokenType::While => write!(f, "WHILE {origin} null"),
+            TokenType::Empty => write!(f, ""),
+        }
     }
 }
 
@@ -122,21 +127,19 @@ impl Iterator for Scanner {
     type Item = Result<Token, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.start = self.current;
-        if self.is_at_end() {
-            return None;
-        }
-        else {
+        while !self.is_at_end() {
+            self.start = self.current;
             let res = self.scan_token_alternative();
 
             match res {
-                Ok(token) => Some(Ok(token)),
-                Err(err) => Some(Err(err)),
+                Ok(tok) if tok.token_type == TokenType::Empty => continue,
+                _ => return Some(res),
             }
-
         }
+        None
     }
 }
+
 
 
 impl Scanner {
@@ -263,10 +266,10 @@ impl Scanner {
     }
 
     fn return_token(&self, token_type: TokenType) -> Token {
-        self.return_token_helper(token_type, String::from("null"))
+        self.return_token_helper(token_type, Some(Box::new(String::from("null"))))
     }
 
-    fn return_token_helper(&self, token_type: TokenType, literal: String) -> Token {
+    fn return_token_helper(&self, token_type: TokenType, literal: Option<Box<dyn Any>>) -> Token {
         let text = &self.source[self.start..self.current];
         Token {token_type, lexeme: String::from(text), literal}
     }
@@ -283,7 +286,7 @@ impl Scanner {
             self.advance();
             let text = &self.source[self.start..self.current];
             let lit = text.replace('"', "");
-            return Ok(Token{token_type: TokenType::String, lexeme: String::from(text), literal: lit});
+            return Ok(Token{token_type: TokenType::String, lexeme: String::from(text), literal: Some(Box::new(lit))});
         }
     }
 
@@ -312,8 +315,8 @@ impl Scanner {
         }
 
         let num_str = &self.source[self.start..self.current];
-        let num = normalize_number_string(num_str);
-        return Ok(self.return_token_helper(TokenType::Number, num));
+        let n = normalize_number_string(num_str);
+        return Ok(self.return_token_helper(TokenType::Number(n), Some(Box::new(n))));
     }
 
     fn make_identifier_alternative(&mut self) -> Result<Token, ()> {
@@ -346,16 +349,12 @@ impl Scanner {
 
 }
 
-fn normalize_number_string(num_str: &str) -> String {
+fn normalize_number_string(num_str: &str) -> f64 {
     match num_str.parse::<f64>() {
         Ok(num) => {
-            if num.fract() == 0.0 {
-                format!("{:.1}", num)
-            } else {
-                num.to_string()
-            }
+            num
         }
-        Err(_) => num_str.to_string(),
+        Err(_) => 0.0
     }
 }
 
