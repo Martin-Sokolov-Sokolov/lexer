@@ -1,11 +1,13 @@
+use std::ptr::null;
+
 use crate::scanner::*;
 
-enum Expr {
-    Lit(Literal),
-    Unary(UnaryOp, Box<Expr>),
-    Binary(Box<Expr>, BinaryOp, Box<Expr>),
+enum Expr <'a> {
+    Lit(Literal<'a>),
+    Unary(UnaryOp, Box<Expr<'a>>),
+    Binary(Box<Expr<'a>>, BinaryOp, Box<Expr<'a>>),
     BinaryOp,
-    Grouping(Box<Expr>),
+    Grouping(Box<Expr<'a>>),
 }
 
 pub enum UnaryOp {
@@ -27,15 +29,14 @@ pub enum BinaryOp {
 }
 
 
-enum Literal {
+enum Literal <'a> {
     Number(f64),
-    Str(String),
+    Str(&'a str),
     True(bool),
     False(bool),
     Nil,
 }
 
-#[derive(Debug)]
 struct Parser {
     tokens: Vec<Token>,
     current: usize,
@@ -49,30 +50,29 @@ impl Parser {
         }
     }
 
-    fn expression(&self) -> Expr {
+    fn expression(&mut self) -> Expr {
         self.equality()
     }
 
-    fn equality(&self) -> Expr {
+    fn equality(&mut self) -> Expr {
         let expr = self.comparison();
-
 
         expr
     }
 
-    fn comparison(&self) -> Expr {
+    fn comparison(&mut self) -> Expr {
         let expr = self.term();
 
         expr
     }
 
-    fn term(&self) -> Expr {
+    fn term(&mut self) -> Expr {
         let expr = self.factor();
 
         expr
     }
 
-    fn factor(&self) -> Expr {
+    fn factor(&mut self) -> Expr {
         let expr = self.unary();
 
         expr
@@ -82,17 +82,79 @@ impl Parser {
         Expr::BinaryOp
     }
 
-    fn check(&self, to_compare: Token) -> bool {
-        if self.is_at_end() || self.tokens[self.current] != to_compare {
-            false
+    fn check(&self, token_type: &TokenType) -> bool {
+        !self.is_at_end() && &self.peek().token_type != token_type
+    }
+
+    fn advance(&mut self) -> &Token {
+        if !self.is_at_end() {
+            self.current += 1;
+        }
+        self.previous()
+    }
+
+    fn consume(&mut self, token_type: &TokenType, err: String) -> Result<&Token, String> {
+        if self.check(token_type) {
+            Ok(self.advance())
         }
         else {
-            true
+            Err(err)
         }
     }
 
-    fn is_at_end(&self) -> bool{
+    fn previous(&self) -> &Token {
+        self.tokens.get(self.current-1).unwrap()
+    }
+
+    fn peek(&self) -> &Token {
+        self.tokens.get(self.current).unwrap()
+    }
+
+    fn is_at_end(&self) -> bool {
         self.current >= self.tokens.len()
+    }
+
+    fn primary<'a>(&mut self) -> Expr {
+        if self.mat(Vec::from([TokenType::False])) {return Expr::Lit(Literal::False(false)); }
+        else if self.mat(Vec::from([TokenType::True])) {return Expr::Lit(Literal::True(true)); }
+        else if self.mat(Vec::from([TokenType::Nil])) { return Expr::Lit(Literal::Nil); }
+
+        else if self.mat(Vec::from([TokenType::String])) {
+            if let Some(lit) = &self.previous().literal {
+                if let Some(str_val) = lit.downcast_ref::<String>() {
+                    return Expr::Lit(Literal::Str(&str_val.as_str()));
+                }
+            }
+
+        }
+        else if self.mat(Vec::from([TokenType::LeftParen])) {
+            let expr = self.expression();
+            return Expr::Grouping(Box::from(expr));
+        }
+        else {
+            let t = self.peek();
+            if let TokenType::Number(n) = t.token_type {
+                if self.mat(Vec::from([TokenType::Number(n)])) {
+                    if let Some(lit) = &self.previous().literal {
+                        if let Some(num_val) = lit.downcast_ref::<f64>() {
+                            return Expr::Lit(Literal::Number(*num_val));
+                        }
+                    }
+                }
+            }
+        }
+        
+        Expr::Lit(Literal::Nil)
+    }
+
+    fn mat(&mut self, v: Vec<TokenType>) -> bool {
+        for token_type in v {
+            if self.check(&token_type) {
+                self.advance();
+            }
+            return true;
+        }
+        false
     }
 
 }
