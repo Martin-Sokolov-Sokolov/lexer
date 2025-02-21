@@ -19,7 +19,7 @@ fn main() {
                 String::new()
             });
 
-            let mut buffer = String::new(); // Buffer for normal output
+            let mut buffer = String::new();
             let mut code = 0;
 
             let tokenizer = scanner::Scanner::new(file_contents);

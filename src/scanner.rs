@@ -93,7 +93,7 @@ impl Display for TokenType {
 }
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    token_type: TokenType,
+    pub token_type: TokenType,
     lexeme: String,
     literal: String
 }
@@ -122,21 +122,19 @@ impl Iterator for Scanner {
     type Item = Result<Token, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.start = self.current;
-        if self.is_at_end() {
-            return None;
-        }
-        else {
+        while !self.is_at_end() {
+            self.start = self.current;
             let res = self.scan_token_alternative();
 
             match res {
-                Ok(token) => Some(Ok(token)),
-                Err(err) => Some(Err(err)),
+                Ok(tok) if tok.token_type == TokenType::Empty => continue,
+                _ => return Some(res),
             }
-
         }
+        None
     }
 }
+
 
 
 impl Scanner {

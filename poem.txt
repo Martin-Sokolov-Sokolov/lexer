@@ -1,1 +1,6 @@
-"bar
+space    tabs				newlines
+
+
+
+
+end
