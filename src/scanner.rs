@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -43,12 +43,14 @@ pub enum TokenType {
     True,
     Var,
     While,
-    Empty
+    Empty,
+    EOF
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
-    lexeme: String,
+    pub lexeme: String,
     pub literal: Option<Box<dyn Any>>,
 }
 
@@ -111,6 +113,7 @@ impl fmt::Display for Token {
             TokenType::Var => write!(f, "VAR {origin} null"),
             TokenType::While => write!(f, "WHILE {origin} null"),
             TokenType::Empty => write!(f, ""),
+            TokenType::EOF => write!(f, "EOF  null"),
         }
     }
 }

@@ -2,6 +2,10 @@ use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
+
+use parser::Parser;
+use scanner::Token;
+use scanner::TokenType;
 mod scanner;
 mod parser;
 
@@ -21,6 +25,7 @@ fn main() {
 
             let mut buffer = String::new();
             let mut code = 0;
+            let mut tokens: Vec<Token> = vec![];
 
             let tokenizer = scanner::Scanner::new(file_contents);
 
@@ -30,6 +35,7 @@ fn main() {
                     Ok(token) => {
                         if !token.is_empty() {
                             writeln!(buffer, "{}", token).unwrap();
+                            tokens.push(token);
                         }
                     }
                     Err(err) => {
@@ -40,7 +46,13 @@ fn main() {
             }
 
             print!("{buffer}");
-            println!("EOF  null");
+            //println!("EOF  null");
+
+            tokens.push(
+                Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None }
+            );
+            let mut parser = Parser::new(tokens);
+            parser.parse();
 
             if code != 0 {
                 process::exit(65);
