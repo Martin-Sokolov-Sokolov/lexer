@@ -226,7 +226,7 @@ impl Scanner {
                 }
             }
 
-            _ => return Err(format!("[line {}]: Error: Unexpected character: {}", self.line, c)),
+            _ => return Err(format!("[line {}] Error: Unexpected character: {}", self.line, c)),
         };
 
         Ok(res)
