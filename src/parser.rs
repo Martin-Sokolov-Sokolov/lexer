@@ -22,6 +22,7 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
             Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
             Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
+            Expr::Grouping(r) => write!(f, "(group {})", r),
             _ => write!(f, "None"),
         }
     }
