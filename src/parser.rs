@@ -1,5 +1,9 @@
 use crate::scanner::*;
+use std::borrow::Cow;
+use std::fmt::{self, Pointer};
+use std::io::{self, Write};
 
+#[derive(Debug)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),
@@ -7,9 +11,35 @@ pub enum Expr {
     BinaryOp,
     Grouping(Box<Expr>),
 }
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::Nil) => write!(f, "nil"),
+            Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
+            Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
+            Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
+            Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
+            _ => write!(f, "None"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum UnaryOp {
     Negate,
     Not,   
+}
+
+impl fmt::Display for UnaryOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UnaryOp::Negate => write!(f, "-"),
+            UnaryOp::Not => write!(f, "!"),
+        }
+    }
 }
 
 impl UnaryOp {
@@ -22,7 +52,7 @@ impl UnaryOp {
     }
 }
 
-
+#[derive(Debug)]
 pub enum BinaryOp {
     Equals,      
     NotEquals,   
@@ -34,6 +64,23 @@ pub enum BinaryOp {
     Subtract,    
     Multiply,    
     Divide,      
+}
+
+impl fmt::Display for BinaryOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            BinaryOp::Equals => write!(f, "="),
+            BinaryOp::NotEquals => write!(f, "!="),   
+            BinaryOp::Less => write!(f, "<"),        
+            BinaryOp::LessEqual => write!(f, "<="),   
+            BinaryOp::Greater => write!(f, ">"),     
+            BinaryOp::GreaterEqual => write!(f, ">="),
+            BinaryOp::Add => write!(f, "+"),         
+            BinaryOp::Subtract => write!(f, "-"),    
+            BinaryOp::Multiply => write!(f, "*"),    
+            BinaryOp::Divide => write!(f, "/"),   
+        }
+    }
 }
 
 impl BinaryOp {
@@ -54,8 +101,8 @@ impl BinaryOp {
     }
 }
 
-
-enum Literal {
+#[derive(Debug)]
+pub enum Literal {
     Number(f64),
     Str(String),
     True(bool),
@@ -172,18 +219,27 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        return self.tokens[self.current].token_type == TokenType::EOF;
+        return self.peek().token_type == TokenType::EOF;
     }
 
     fn primary (&mut self) -> Expr {
-        if self.mat(&[TokenType::False]) {return Expr::Lit(Literal::False(false)); }
-        else if self.mat(&[TokenType::True]) {return Expr::Lit(Literal::True(true)); }
-        else if self.mat(&[TokenType::Nil]) { return Expr::Lit(Literal::Nil); }
+        if self.mat(&[TokenType::False]) {
+            let expr = Expr::Lit(Literal::False(false));
+            return expr;
+        }
+        else if self.mat(&[TokenType::True]) {
+            let expr =  Expr::Lit(Literal::True(true));
+            return expr;
+        }
+        else if self.mat(&[TokenType::Nil]) { 
+            let expr = Expr::Lit(Literal::Nil);
+            return expr;
+        }
 
         else if self.mat(&[TokenType::String]) {
             if let Some(lit) = &self.previous().literal {
                 if let Some(str_val) = lit.downcast_ref::<String>() {
-                    return Expr::Lit(Literal::Str(String::from(str_val)));
+                    return Expr::Lit(Literal::Str(str_val.to_string()));
                 }
             }
         }
@@ -208,6 +264,7 @@ impl Parser {
         Expr::Lit(Literal::Nil)
     }
 
+
     fn mat(&mut self, v: &[TokenType]) -> bool {
         for token_type in v {
             if self.check(&token_type) {
@@ -222,4 +279,21 @@ impl Parser {
         self.expression()
     }
 
+}
+
+impl Iterator for Parser {
+    type Item = Expr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while !self.is_at_end() {
+            let expr = self.parse();
+
+            return Some(expr);
+        }
+        None        
+    }
+}
+
+pub fn unescape(s: & str) -> Cow<str> {
+    Cow::Borrowed(s.trim_matches('"'))
 }

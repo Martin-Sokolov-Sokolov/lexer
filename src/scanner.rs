@@ -2,7 +2,6 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::fmt;
 
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     LeftParen,
@@ -207,7 +206,7 @@ impl Scanner {
                     token
                 }
                 else {
-                    return Err(format!("[line {}] Error: Unterminated string", self.line));
+                    return Err(format!("[line {}] Error: Unterminated string.", self.line));
                 }
             }
             '0'..='9' => {
@@ -227,7 +226,7 @@ impl Scanner {
                 }
             }
 
-            _ => return Err(format!("[line {}]: Error: Unexpected character: {}", self.line, c)),
+            _ => return Err(format!("[line {}] Error: Unexpected character: {}", self.line, c)),
         };
 
         Ok(res)
