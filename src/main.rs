@@ -17,14 +17,14 @@ fn main() {
     let filename = &args[2];
 
     match command.as_str() {
-        "tokenize" => {
+        "parse" => {
             // You can use print statements as follows for debugging, they'll be visible when running tests.
 
             let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
                 String::new()
             });
 
-            //let mut buffer = String::new();
+            let mut buffer = String::new();
             let mut code = 0;
             let mut tokens: Vec<Token> = vec![];
 
@@ -35,7 +35,7 @@ fn main() {
                 match it {
                     Ok(token) => {
                         if !token.is_empty() {
-                            //writeln!(buffer, "{}", token).unwrap();
+                            writeln!(buffer, "{}", token).unwrap();
                             tokens.push(token);
                         }
                     }
