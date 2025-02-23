@@ -20,7 +20,7 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
             Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
-            Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
+            Expr::Binary(left, operator,  right) => write!(f, "({} {} {})", operator, left, right),
             Expr::Unary(opeartor, right) => write!(f, "({} {})", opeartor, right),
             Expr::Grouping(r) => write!(f, "(group {})", r),
             _ => write!(f, "None"),
@@ -167,7 +167,7 @@ impl Parser {
     fn factor(&mut self) ->  Expr {
         let mut expr = self.unary();
 
-        while self.mat(&[TokenType::Dot, TokenType::Slash]) {
+        while self.mat(&[TokenType::Star, TokenType::Slash]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
             let right = self.unary();
             expr = Expr::Binary(Box::from(expr), operator, Box::from(right));
