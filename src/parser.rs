@@ -21,7 +21,7 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
             Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
-            Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
+            Expr::Unary(opeartor, right) => write!(f, "({} {})", opeartor, right),
             Expr::Grouping(r) => write!(f, "(group {})", r),
             _ => write!(f, "None"),
         }
@@ -47,7 +47,7 @@ impl UnaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<UnaryOp> {
         match token_type {
             TokenType::Minus => Some(UnaryOp::Negate),
-            TokenType::Slash => Some(UnaryOp::Not),
+            TokenType::Bang => Some(UnaryOp::Not),
             _ => None,
         }
     }
