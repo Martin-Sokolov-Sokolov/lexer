@@ -55,7 +55,8 @@ impl UnaryOp {
 
 #[derive(Debug)]
 pub enum BinaryOp {
-    Equals,      
+    Equals,
+    EqualEqual,
     NotEquals,   
     Less,        
     LessEqual,   
@@ -64,13 +65,14 @@ pub enum BinaryOp {
     Add,         
     Subtract,    
     Multiply,    
-    Divide,      
+    Divide,
 }
 
 impl fmt::Display for BinaryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             BinaryOp::Equals => write!(f, "="),
+            BinaryOp::EqualEqual => write!(f, "=="),
             BinaryOp::NotEquals => write!(f, "!="),   
             BinaryOp::Less => write!(f, "<"),        
             BinaryOp::LessEqual => write!(f, "<="),   
@@ -87,7 +89,8 @@ impl fmt::Display for BinaryOp {
 impl BinaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<BinaryOp> {
         match token_type {
-            TokenType::EqualEqual => Some(BinaryOp::Equals),
+            TokenType::Equal => Some(BinaryOp::Equals),
+            TokenType::EqualEqual => Some(BinaryOp::EqualEqual),
             TokenType::BangEqual => Some(BinaryOp::NotEquals),
             TokenType::Less => Some(BinaryOp::Less),
             TokenType::LessEqual => Some(BinaryOp::LessEqual),
