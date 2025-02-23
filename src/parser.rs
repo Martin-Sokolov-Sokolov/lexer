@@ -1,5 +1,7 @@
 use crate::scanner::*;
+use std::fmt::{self, Pointer};
 
+#[derive(Debug)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),
@@ -7,11 +9,23 @@ pub enum Expr {
     BinaryOp,
     Grouping(Box<Expr>),
 }
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::Nil) => write!(f, "null"),
+            _ => write!(f, "None"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum UnaryOp {
     Negate,
     Not,   
 }
-
 impl UnaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<UnaryOp> {
         match token_type {
@@ -22,7 +36,7 @@ impl UnaryOp {
     }
 }
 
-
+#[derive(Debug)]
 pub enum BinaryOp {
     Equals,      
     NotEquals,   
@@ -54,8 +68,8 @@ impl BinaryOp {
     }
 }
 
-
-enum Literal {
+#[derive(Debug)]
+pub enum Literal {
     Number(f64),
     Str(String),
     True(bool),
@@ -172,13 +186,22 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        return self.tokens[self.current].token_type == TokenType::EOF;
+        return self.peek().token_type == TokenType::EOF;
     }
 
     fn primary (&mut self) -> Expr {
-        if self.mat(&[TokenType::False]) {return Expr::Lit(Literal::False(false)); }
-        else if self.mat(&[TokenType::True]) {return Expr::Lit(Literal::True(true)); }
-        else if self.mat(&[TokenType::Nil]) { return Expr::Lit(Literal::Nil); }
+        if self.mat(&[TokenType::False]) {
+            let expr = Expr::Lit(Literal::False(false));
+            return expr;
+        }
+        else if self.mat(&[TokenType::True]) {
+            let expr =  Expr::Lit(Literal::True(true));
+            return expr;
+        }
+        else if self.mat(&[TokenType::Nil]) { 
+            let expr = Expr::Lit(Literal::Nil);
+            return expr;
+        }
 
         else if self.mat(&[TokenType::String]) {
             if let Some(lit) = &self.previous().literal {
@@ -218,8 +241,12 @@ impl Parser {
         false
     }
 
-    pub fn parse(&mut self) -> Expr {
-        self.expression()
+    pub fn parse(&mut self) {
+        while !self.is_at_end() {
+            let expr = self.expression();
+            println!("{}", expr);
+        }
     }
+
 
 }

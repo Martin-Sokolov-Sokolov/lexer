@@ -3,6 +3,7 @@ use std::fs;
 use std::fmt::Write;
 use std::process;
 
+use bytes::buf;
 use parser::Parser;
 use scanner::Token;
 use scanner::TokenType;
@@ -45,7 +46,7 @@ fn main() {
                 }
             }
 
-            print!("{buffer}");
+            //print!("{buffer}");
             //println!("EOF  null");
 
             tokens.push(

@@ -2,7 +2,6 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::fmt;
 
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     LeftParen,
