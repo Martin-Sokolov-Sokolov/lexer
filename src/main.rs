@@ -59,6 +59,8 @@ fn main() {
             let mut parser = Parser::new(tokens);
             parser.parse();
 
+            println!("true");
+
         }
         _ => {
             return;
