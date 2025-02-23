@@ -20,8 +20,9 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
             Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
-            Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
-            Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
+            Expr::Binary(left, operator,  right) => write!(f, "({} {} {})", operator, left, right),
+            Expr::Unary(opeartor, right) => write!(f, "({} {})", opeartor, right),
+            Expr::Grouping(r) => write!(f, "(group {})", r),
             _ => write!(f, "None"),
         }
     }
@@ -46,7 +47,7 @@ impl UnaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<UnaryOp> {
         match token_type {
             TokenType::Minus => Some(UnaryOp::Negate),
-            TokenType::Slash => Some(UnaryOp::Not),
+            TokenType::Bang => Some(UnaryOp::Not),
             _ => None,
         }
     }
@@ -54,7 +55,8 @@ impl UnaryOp {
 
 #[derive(Debug)]
 pub enum BinaryOp {
-    Equals,      
+    Equals,
+    EqualEqual,
     NotEquals,   
     Less,        
     LessEqual,   
@@ -63,13 +65,14 @@ pub enum BinaryOp {
     Add,         
     Subtract,    
     Multiply,    
-    Divide,      
+    Divide,
 }
 
 impl fmt::Display for BinaryOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             BinaryOp::Equals => write!(f, "="),
+            BinaryOp::EqualEqual => write!(f, "=="),
             BinaryOp::NotEquals => write!(f, "!="),   
             BinaryOp::Less => write!(f, "<"),        
             BinaryOp::LessEqual => write!(f, "<="),   
@@ -86,7 +89,8 @@ impl fmt::Display for BinaryOp {
 impl BinaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<BinaryOp> {
         match token_type {
-            TokenType::EqualEqual => Some(BinaryOp::Equals),
+            TokenType::Equal => Some(BinaryOp::Equals),
+            TokenType::EqualEqual => Some(BinaryOp::EqualEqual),
             TokenType::BangEqual => Some(BinaryOp::NotEquals),
             TokenType::Less => Some(BinaryOp::Less),
             TokenType::LessEqual => Some(BinaryOp::LessEqual),
@@ -166,7 +170,7 @@ impl Parser {
     fn factor(&mut self) ->  Expr {
         let mut expr = self.unary();
 
-        while self.mat(&[TokenType::Dot, TokenType::Slash]) {
+        while self.mat(&[TokenType::Star, TokenType::Slash]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
             let right = self.unary();
             expr = Expr::Binary(Box::from(expr), operator, Box::from(right));
