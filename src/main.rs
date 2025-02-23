@@ -49,15 +49,17 @@ fn main() {
             //print!("{buffer}");
             //println!("EOF  null");
 
+            if code != 0 {
+                process::exit(65);
+            }
+
             tokens.push(
                 Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None }
             );
             let mut parser = Parser::new(tokens);
             parser.parse();
 
-            if code != 0 {
-                process::exit(65);
-            }
+
         }
         _ => {
             return;
