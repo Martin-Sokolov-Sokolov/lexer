@@ -206,7 +206,7 @@ impl Scanner {
                     token
                 }
                 else {
-                    return Err(format!("[line {}] Error: Unterminated string", self.line));
+                    return Err(format!("[line {}] Error: Unterminated string.", self.line));
                 }
             }
             '0'..='9' => {
