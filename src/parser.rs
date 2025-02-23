@@ -16,7 +16,7 @@ impl fmt::Display for Expr {
         match self {
             Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
-            Expr::Lit(Literal::Nil) => write!(f, "null"),
+            Expr::Lit(Literal::Nil) => write!(f, "nil"),
             _ => write!(f, "None"),
         }
     }
