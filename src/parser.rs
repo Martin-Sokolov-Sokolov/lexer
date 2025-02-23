@@ -242,11 +242,13 @@ impl Parser {
         false
     }
 
-    pub fn parse(&mut self) {
+    pub fn parse(&mut self) -> Vec<Expr> {
+        let mut res: Vec<Expr> = vec![];
         while !self.is_at_end() {
             let expr = self.expression();
-            writeln!(io::stdout(), "{}", expr);
+            res.push(expr);
         }
+        res
     }
     
 

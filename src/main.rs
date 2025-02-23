@@ -57,9 +57,11 @@ fn main() {
                 Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None }
             );
             let mut parser = Parser::new(tokens);
-            //parser.parse();
+            let exprs = parser.parse();
 
-            println!("true");
+            for expr in exprs {
+                println!("{}", expr);
+            }
 
         }
         _ => {
