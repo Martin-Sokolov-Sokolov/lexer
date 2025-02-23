@@ -55,7 +55,6 @@ fn main() {
         }
 
         "parse" => {
-            // You can use print statements as follows for debugging, they'll be visible when running tests.
 
             let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
                 String::new()

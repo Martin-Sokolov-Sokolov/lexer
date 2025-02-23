@@ -1,4 +1,5 @@
 use crate::scanner::*;
+use std::borrow::Cow;
 use std::fmt::{self, Pointer};
 use std::io::{self, Write};
 
@@ -17,7 +18,7 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
-            Expr::Lit(Literal::Str(s)) => write!(f, "{s:?}"),
+            Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
             Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
             Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
@@ -238,7 +239,7 @@ impl Parser {
         else if self.mat(&[TokenType::String]) {
             if let Some(lit) = &self.previous().literal {
                 if let Some(str_val) = lit.downcast_ref::<String>() {
-                    return Expr::Lit(Literal::Str(String::from(str_val)));
+                    return Expr::Lit(Literal::Str(str_val.to_string()));
                 }
             }
         }
@@ -262,6 +263,7 @@ impl Parser {
         
         Expr::Lit(Literal::Nil)
     }
+
 
     fn mat(&mut self, v: &[TokenType]) -> bool {
         for token_type in v {
@@ -290,4 +292,8 @@ impl Iterator for Parser {
         }
         None        
     }
+}
+
+pub fn unescape(s: & str) -> Cow<str> {
+    Cow::Borrowed(s.trim_matches('"'))
 }
