@@ -24,7 +24,7 @@ fn main() {
                 String::new()
             });
 
-            let mut buffer = String::new();
+            //let mut buffer = String::new();
             let mut code = 0;
             let mut tokens: Vec<Token> = vec![];
 
@@ -35,7 +35,7 @@ fn main() {
                 match it {
                     Ok(token) => {
                         if !token.is_empty() {
-                            writeln!(buffer, "{}", token).unwrap();
+                            //writeln!(buffer, "{}", token).unwrap();
                             tokens.push(token);
                         }
                     }
