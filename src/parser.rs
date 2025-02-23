@@ -17,6 +17,10 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
+            Expr::Lit(Literal::Str(s)) => write!(f, "{s:?}"),
+            Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
+            Expr::Binary(left, operator,  right) => write!(f, "{} {} {}", operator, left, right),
+            Expr::Unary(opeartor, right) => write!(f, "{} {}", opeartor, right),
             _ => write!(f, "None"),
         }
     }
@@ -27,6 +31,16 @@ pub enum UnaryOp {
     Negate,
     Not,   
 }
+
+impl fmt::Display for UnaryOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UnaryOp::Negate => write!(f, "-"),
+            UnaryOp::Not => write!(f, "!"),
+        }
+    }
+}
+
 impl UnaryOp {
     pub fn from_token_type(token_type: &TokenType) -> Option<UnaryOp> {
         match token_type {
@@ -49,6 +63,23 @@ pub enum BinaryOp {
     Subtract,    
     Multiply,    
     Divide,      
+}
+
+impl fmt::Display for BinaryOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            BinaryOp::Equals => write!(f, "="),
+            BinaryOp::NotEquals => write!(f, "!="),   
+            BinaryOp::Less => write!(f, "<"),        
+            BinaryOp::LessEqual => write!(f, "<="),   
+            BinaryOp::Greater => write!(f, ">"),     
+            BinaryOp::GreaterEqual => write!(f, ">="),
+            BinaryOp::Add => write!(f, "+"),         
+            BinaryOp::Subtract => write!(f, "-"),    
+            BinaryOp::Multiply => write!(f, "*"),    
+            BinaryOp::Divide => write!(f, "/"),   
+        }
+    }
 }
 
 impl BinaryOp {
@@ -242,15 +273,21 @@ impl Parser {
         false
     }
 
-    pub fn parse(&mut self) -> Vec<Expr> {
-        let mut res: Vec<Expr> = vec![];
-        while !self.is_at_end() {
-            let expr = self.expression();
-            res.push(expr);
-        }
-        res
+    pub fn parse(&mut self) -> Expr {
+        self.expression()
     }
-    
 
+}
 
+impl Iterator for Parser {
+    type Item = Expr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while !self.is_at_end() {
+            let expr = self.parse();
+
+            return Some(expr);
+        }
+        None        
+    }
 }
