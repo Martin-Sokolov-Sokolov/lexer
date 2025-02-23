@@ -1,5 +1,5 @@
 use crate::scanner::*;
-use std::{fmt::{self, Pointer}};
+use std::fmt::{self, Pointer};
 use std::io::{self, Write};
 
 #[derive(Debug)]
@@ -14,8 +14,8 @@ pub enum Expr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Lit(Literal::False(b)) => write!(f, "{}", b),
-            Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::False(b)) => write!(f, "{} ", b),
+            Expr::Lit(Literal::True(b)) => write!(f, "{} ", b),
             Expr::Lit(Literal::Nil) => write!(f, "null"),
             _ => write!(f, "None"),
         }
