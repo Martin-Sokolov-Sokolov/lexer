@@ -1,5 +1,6 @@
 use crate::scanner::*;
-use std::fmt::{self, Pointer};
+use std::{fmt::{self, Pointer}};
+use std::io::{self, Write};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -244,9 +245,10 @@ impl Parser {
     pub fn parse(&mut self) {
         while !self.is_at_end() {
             let expr = self.expression();
-            println!("{}", expr);
+            writeln!(io::stdout(), "{}", expr);
         }
     }
+    
 
 
 }
