@@ -86,22 +86,12 @@ fn main() {
             tokens.push(
                 Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line:0 }
             );
-            let parser = Parser::new(tokens);
+            let mut parser = Parser::new(tokens);
 
-            for it in parser {
-                match it {
-                    Ok(expr) => {
-                        writeln!(buffer, "{}", expr).unwrap();
-                    }
-                    Err(err) => {
-                        eprintln!("{}", err);
-                        process::exit(65);
-                    }
-                }
+            match parser.parse() {
+                Ok(a) => print!("{a}"),
+                Err(s) => eprintln!("{s}"),
             }
-
-            print!("{}", buffer);
-
         }
         _ => {
             return;
