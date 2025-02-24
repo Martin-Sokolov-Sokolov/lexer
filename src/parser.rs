@@ -280,6 +280,7 @@ impl Parser {
 
     fn consume(&mut self, token_type: &TokenType) -> bool {
         if self.check(token_type) {
+            self.advance();
             true
         }
         else {
