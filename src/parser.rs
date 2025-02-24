@@ -321,7 +321,6 @@ impl Iterator for Parser {
     fn next(&mut self) -> Option<Self::Item> {
         while !self.is_at_end() {
             let expr = self.parse();
-            println!("{}", expr);
             match expr {
                 Expr::ErrorExpr(s) => {
                     return Some(Err(s));
