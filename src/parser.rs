@@ -1,7 +1,7 @@
 use crate::scanner::*;
 use std::borrow::Cow;
-use std::fmt::{self, Pointer};
-use std::io::{self, Write};
+use std::ops::Deref;
+use std::{fmt, process};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -10,6 +10,7 @@ pub enum Expr {
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     BinaryOp,
     Grouping(Box<Expr>),
+    ErrorExpr(String)
 }
 
 impl fmt::Display for Expr {
@@ -23,6 +24,7 @@ impl fmt::Display for Expr {
             Expr::Binary(left, operator,  right) => write!(f, "({} {} {})", operator, left, right),
             Expr::Unary(opeartor, right) => write!(f, "({} {})", opeartor, right),
             Expr::Grouping(r) => write!(f, "(group {})", r),
+            Expr::ErrorExpr(err_msg) => write!(f, "{}", err_msg),
             _ => write!(f, "None"),
         }
     }
@@ -128,11 +130,21 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expr {
-        self.equality()
+        let expr = self.equality();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
+
+        expr
     }
 
     fn equality(&mut self) -> Expr {
         let mut expr = self.comparison();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -143,8 +155,12 @@ impl Parser {
         expr
     }
 
-    fn comparison(&mut self) ->  Expr {
+    fn comparison(&mut self) -> Expr {
         let mut expr = self.term();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -155,8 +171,12 @@ impl Parser {
         expr
     }
 
-    fn term(&mut self) ->  Expr {
+    fn term(&mut self) -> Expr {
         let mut expr = self.factor();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Minus, TokenType::Plus]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -167,8 +187,12 @@ impl Parser {
         expr
     }
 
-    fn factor(&mut self) ->  Expr {
+    fn factor(&mut self) -> Expr {
         let mut expr = self.unary();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Star, TokenType::Slash]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -180,7 +204,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Expr {
-
+        
         if self.mat(&[TokenType::Minus, TokenType::Bang]) {
             let operator = UnaryOp::from_token_type(&self.previous().token_type).unwrap();
             let right = self.unary();
@@ -189,41 +213,6 @@ impl Parser {
         }
 
         self.primary()
-    }
-
-    fn check(&self, token_type: &TokenType) -> bool {
-        if self.is_at_end() {
-            return false;
-        }
-        return &self.peek().token_type == token_type;
-    }
-
-    fn advance(&mut self) -> &Token {
-        if !self.is_at_end() {
-            self.current += 1;
-        }
-        self.previous()
-    }
-
-    fn consume(&mut self, token_type: &TokenType, err: String) -> Result<&Token, String> {
-        if self.check(token_type) {
-            Ok(self.advance())
-        }
-        else {
-            Err(err)
-        }
-    }
-
-    fn previous(&self) -> &Token {
-        self.tokens.get(self.current-1).unwrap()
-    }
-
-    fn peek(&self) -> &Token {
-        self.tokens.get(self.current).unwrap()
-    }
-
-    fn is_at_end(&self) -> bool {
-        return self.peek().token_type == TokenType::EOF;
     }
 
     fn primary (&mut self) -> Expr {
@@ -249,8 +238,14 @@ impl Parser {
         }
         else if self.mat(&[TokenType::LeftParen]) {
             let expr = self.expression();
-            let _ = self.consume(&TokenType::RightParen, "Expect ')' after expression.".to_string());
-            return Expr::Grouping(Box::from(expr));
+
+            if self.consume(&TokenType::RightParen) {
+                return Expr::Grouping(Box::from(expr));
+            }
+            else {
+                return Expr::ErrorExpr("Expect ')' after expression.".to_string());
+            }
+
         }
         else {
             let t = self.peek();
@@ -264,10 +259,45 @@ impl Parser {
                 }
             }
         }
-        
-        Expr::Lit(Literal::Nil)
+        let tok  = self.peek();
+
+        Expr::ErrorExpr(format!("[line {}] Error at '{}': Expect expression.", tok.line, tok.lexeme))
     }
 
+    fn check(&self, token_type: &TokenType) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        return &self.peek().token_type == token_type;
+    }
+
+    fn advance(&mut self) -> &Token {
+        if !self.is_at_end() {
+            self.current += 1;
+        }
+        self.previous()
+    }
+
+    fn consume(&mut self, token_type: &TokenType) -> bool {
+        if self.check(token_type) {
+            true
+        }
+        else {
+            false
+        }
+    }
+
+    fn previous(&self) -> &Token {
+        self.tokens.get(self.current-1).unwrap()
+    }
+
+    fn peek(&self) -> &Token {
+        self.tokens.get(self.current).unwrap()
+    }
+
+    fn is_at_end(&self) -> bool {
+        return self.peek().token_type == TokenType::EOF;
+    }
 
     fn mat(&mut self, v: &[TokenType]) -> bool {
         for token_type in v {
@@ -286,13 +316,19 @@ impl Parser {
 }
 
 impl Iterator for Parser {
-    type Item = Expr;
+    type Item = Result<Expr, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while !self.is_at_end() {
             let expr = self.parse();
+            println!("{}", expr);
+            match expr {
+                Expr::ErrorExpr(s) => {
+                    return Some(Err(s));
+                }
+                _ => return Some(Ok(expr)),
+            }
 
-            return Some(expr);
         }
         None        
     }
