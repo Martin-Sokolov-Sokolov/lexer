@@ -2,7 +2,6 @@ use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
-use parser::Expr;
 use parser::Parser;
 use scanner::Token;
 use scanner::TokenType;
@@ -101,7 +100,7 @@ fn main() {
                 }
             }
 
-            //print!("{}", buffer);
+            print!("{}", buffer);
 
         }
         _ => {
