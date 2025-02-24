@@ -90,7 +90,10 @@ fn main() {
 
             match parser.parse() {
                 Ok(a) => print!("{a}"),
-                Err(s) => eprintln!("{s}"),
+                Err(s) => {
+                    eprintln!("{s}");
+                    process::exit(65);
+                }
             }
         }
         _ => {
