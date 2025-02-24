@@ -1,7 +1,6 @@
 use crate::scanner::*;
 use std::borrow::Cow;
-use std::fmt::{self, Pointer};
-use std::io::{self, Write};
+use std::{fmt, process};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -10,6 +9,7 @@ pub enum Expr {
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     BinaryOp,
     Grouping(Box<Expr>),
+    ErrorExpr(String)
 }
 
 impl fmt::Display for Expr {
@@ -23,6 +23,7 @@ impl fmt::Display for Expr {
             Expr::Binary(left, operator,  right) => write!(f, "({} {} {})", operator, left, right),
             Expr::Unary(opeartor, right) => write!(f, "({} {})", opeartor, right),
             Expr::Grouping(r) => write!(f, "(group {})", r),
+            Expr::ErrorExpr(err_msg) => write!(f, "{}", err_msg),
             _ => write!(f, "None"),
         }
     }
@@ -205,12 +206,12 @@ impl Parser {
         self.previous()
     }
 
-    fn consume(&mut self, token_type: &TokenType, err: String) -> Result<&Token, String> {
+    fn consume(&mut self, token_type: &TokenType) -> bool {
         if self.check(token_type) {
-            Ok(self.advance())
+            true
         }
         else {
-            Err(err)
+            false
         }
     }
 
@@ -249,8 +250,14 @@ impl Parser {
         }
         else if self.mat(&[TokenType::LeftParen]) {
             let expr = self.expression();
-            let _ = self.consume(&TokenType::RightParen, "Expect ')' after expression.".to_string());
-            return Expr::Grouping(Box::from(expr));
+
+            if self.consume(&TokenType::RightParen) {
+                return Expr::Grouping(Box::from(expr));
+            }
+            else {
+                return Expr::ErrorExpr("Expect ')' after expression.".to_string());
+            }
+
         }
         else {
             let t = self.peek();
@@ -264,8 +271,9 @@ impl Parser {
                 }
             }
         }
-        
-        Expr::Lit(Literal::Nil)
+        let tok  = self.peek();
+
+        Expr::ErrorExpr(format!("[line {}] Error at '{}': Expect expression.", tok.line, tok.lexeme))
     }
 
 
@@ -286,13 +294,19 @@ impl Parser {
 }
 
 impl Iterator for Parser {
-    type Item = Expr;
+    type Item = Result<Expr, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while !self.is_at_end() {
             let expr = self.parse();
 
-            return Some(expr);
+            match expr {
+                Expr::ErrorExpr(s) => {
+                    return Some(Err(s));
+                }
+                _ => return Some(Ok(expr)),
+            }
+
         }
         None        
     }

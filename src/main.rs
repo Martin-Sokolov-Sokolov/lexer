@@ -2,8 +2,7 @@ use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
-
-use bytes::buf;
+use parser::Expr;
 use parser::Parser;
 use scanner::Token;
 use scanner::TokenType;
@@ -86,18 +85,26 @@ fn main() {
             //println!("EOF  null");
 
             if code != 0 {
-                process::exit(65);
+                process::exit(code);
             }
 
             tokens.push(
-                Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None }
+                Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line:0 }
             );
-            let mut parser = Parser::new(tokens);
+            let parser = Parser::new(tokens);
 
-            for expr in parser {
-                println!("{}", expr);
+            for it in parser {
+
+                match it {
+                    Ok(expr) => {
+                        writeln!(buffer, "{}", expr).unwrap();
+                    }
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        process::exit(65);
+                    }
+                }
             }
-
         }
         _ => {
             return;

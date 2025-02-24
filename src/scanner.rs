@@ -51,6 +51,7 @@ pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
     pub literal: Option<Box<dyn Any>>,
+    pub line: usize,
 }
 
 impl Token {
@@ -273,7 +274,7 @@ impl Scanner {
 
     fn return_token_helper(&self, token_type: TokenType, literal: Option<Box<dyn Any>>) -> Token {
         let text = &self.source[self.start..self.current];
-        Token {token_type, lexeme: String::from(text), literal}
+        Token {token_type, lexeme: String::from(text), literal, line:self.line}
     }
 
     fn make_string_alternative(&mut self) -> Result<Token, String> {
@@ -288,7 +289,7 @@ impl Scanner {
             self.advance();
             let text = &self.source[self.start..self.current];
             let lit = text.replace('"', "");
-            return Ok(Token{token_type: TokenType::String, lexeme: String::from(text), literal: Some(Box::new(lit))});
+            return Ok(Token{token_type: TokenType::String, lexeme: String::from(text), literal: Some(Box::new(lit)), line:self.line});
         }
     }
 
