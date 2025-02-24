@@ -61,6 +61,7 @@ fn main() {
 
             let mut buffer = String::new();
             let mut tokens: Vec<Token> = vec![];
+            let mut code = 0;
 
             let tokenizer = scanner::Scanner::new(file_contents);
 
@@ -74,8 +75,13 @@ fn main() {
                     }
                     Err(err) => {
                         eprintln!("{}", err);
+                        code = 65;
                     }
                 }
+            }
+
+            if code != 0 {
+                process::exit(65);
             }
 
             tokens.push(
