@@ -60,7 +60,6 @@ fn main() {
             });
 
             let mut buffer = String::new();
-            let mut code = 0;
             let mut tokens: Vec<Token> = vec![];
 
             let tokenizer = scanner::Scanner::new(file_contents);
@@ -70,22 +69,13 @@ fn main() {
                 match it {
                     Ok(token) => {
                         if !token.is_empty() {
-                            writeln!(buffer, "{}", token).unwrap();
                             tokens.push(token);
                         }
                     }
                     Err(err) => {
                         eprintln!("{}", err);
-                        code = 65;
                     }
                 }
-            }
-
-            //print!("{buffer}");
-            //println!("EOF  null");
-
-            if code != 0 {
-                process::exit(code);
             }
 
             tokens.push(
@@ -94,7 +84,6 @@ fn main() {
             let parser = Parser::new(tokens);
 
             for it in parser {
-
                 match it {
                     Ok(expr) => {
                         writeln!(buffer, "{}", expr).unwrap();
@@ -105,6 +94,9 @@ fn main() {
                     }
                 }
             }
+
+            //print!("{}", buffer);
+
         }
         _ => {
             return;

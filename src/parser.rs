@@ -1,5 +1,6 @@
 use crate::scanner::*;
 use std::borrow::Cow;
+use std::ops::Deref;
 use std::{fmt, process};
 
 #[derive(Debug)]
@@ -129,11 +130,21 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expr {
-        self.equality()
+        let expr = self.equality();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
+
+        expr
     }
 
     fn equality(&mut self) -> Expr {
         let mut expr = self.comparison();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -144,8 +155,12 @@ impl Parser {
         expr
     }
 
-    fn comparison(&mut self) ->  Expr {
+    fn comparison(&mut self) -> Expr {
         let mut expr = self.term();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -156,8 +171,12 @@ impl Parser {
         expr
     }
 
-    fn term(&mut self) ->  Expr {
+    fn term(&mut self) -> Expr {
         let mut expr = self.factor();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Minus, TokenType::Plus]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -168,8 +187,12 @@ impl Parser {
         expr
     }
 
-    fn factor(&mut self) ->  Expr {
+    fn factor(&mut self) -> Expr {
         let mut expr = self.unary();
+
+        if let Expr::ErrorExpr(s) = expr {
+            return Expr::ErrorExpr(s);
+        }
 
         while self.mat(&[TokenType::Star, TokenType::Slash]) {
             let operator = BinaryOp::from_token_type(&self.previous().token_type).unwrap();
@@ -181,7 +204,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Expr {
-
+        
         if self.mat(&[TokenType::Minus, TokenType::Bang]) {
             let operator = UnaryOp::from_token_type(&self.previous().token_type).unwrap();
             let right = self.unary();
@@ -190,41 +213,6 @@ impl Parser {
         }
 
         self.primary()
-    }
-
-    fn check(&self, token_type: &TokenType) -> bool {
-        if self.is_at_end() {
-            return false;
-        }
-        return &self.peek().token_type == token_type;
-    }
-
-    fn advance(&mut self) -> &Token {
-        if !self.is_at_end() {
-            self.current += 1;
-        }
-        self.previous()
-    }
-
-    fn consume(&mut self, token_type: &TokenType) -> bool {
-        if self.check(token_type) {
-            true
-        }
-        else {
-            false
-        }
-    }
-
-    fn previous(&self) -> &Token {
-        self.tokens.get(self.current-1).unwrap()
-    }
-
-    fn peek(&self) -> &Token {
-        self.tokens.get(self.current).unwrap()
-    }
-
-    fn is_at_end(&self) -> bool {
-        return self.peek().token_type == TokenType::EOF;
     }
 
     fn primary (&mut self) -> Expr {
@@ -276,6 +264,40 @@ impl Parser {
         Expr::ErrorExpr(format!("[line {}] Error at '{}': Expect expression.", tok.line, tok.lexeme))
     }
 
+    fn check(&self, token_type: &TokenType) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        return &self.peek().token_type == token_type;
+    }
+
+    fn advance(&mut self) -> &Token {
+        if !self.is_at_end() {
+            self.current += 1;
+        }
+        self.previous()
+    }
+
+    fn consume(&mut self, token_type: &TokenType) -> bool {
+        if self.check(token_type) {
+            true
+        }
+        else {
+            false
+        }
+    }
+
+    fn previous(&self) -> &Token {
+        self.tokens.get(self.current-1).unwrap()
+    }
+
+    fn peek(&self) -> &Token {
+        self.tokens.get(self.current).unwrap()
+    }
+
+    fn is_at_end(&self) -> bool {
+        return self.peek().token_type == TokenType::EOF;
+    }
 
     fn mat(&mut self, v: &[TokenType]) -> bool {
         for token_type in v {
@@ -299,7 +321,7 @@ impl Iterator for Parser {
     fn next(&mut self) -> Option<Self::Item> {
         while !self.is_at_end() {
             let expr = self.parse();
-
+            println!("{}", expr);
             match expr {
                 Expr::ErrorExpr(s) => {
                     return Some(Err(s));
