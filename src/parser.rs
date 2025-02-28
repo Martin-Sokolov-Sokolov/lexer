@@ -1,7 +1,6 @@
 use crate::scanner::*;
 use std::borrow::Cow;
-use std::{fmt, process};
-use std::process::exit;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum Expr {
