@@ -10,25 +10,21 @@ mod parser;
 mod evaluator;
 use evaluator::Evaluator;
 
-fn tokenize(file_contents: String) -> Result<(Vec<Token>, String), String> {
+fn tokenize(file_contents: String) -> (Vec<Token>, String) {
     let tokenizer = Scanner::new(file_contents);
     let mut tokens = Vec::new();
-    let mut buffer = String::new();
+    let mut err_buffer = String::new();
 
     for it in tokenizer {
         match it {
-            Ok(token) if !token.is_empty() => {
-                writeln!(buffer, "{}", token).unwrap();
-                tokens.push(token);
-            }
-            Err(err) => eprintln!("{}", err.to_string()),
-            _ => {}
+            Ok(token) => tokens.push(token),
+            Err(err) => writeln!(err_buffer, "{}", err).unwrap(),
         }
     }
-    Ok((tokens, buffer))
+    (tokens, err_buffer)
 }
 
-fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
+fn _parse(tokens: Vec<Token>) -> Result<Expr, String> {
     let mut tokens = tokens;
     tokens.push(Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line: 0 });
     let mut parser = Parser::new(tokens);
@@ -49,28 +45,54 @@ fn main() {
     let file_contents = fs::read_to_string(filename).unwrap_or_default();
     
     match command.as_str() {
-        "tokenize" => match tokenize(file_contents) {
-            Ok((_, buffer)) => {
-                print!("{}", buffer);
-                println!("EOF  null");
+        "tokenize" => {
+            let (tokens, err_buff) = tokenize(file_contents);
+            let mut buffer = String::new();
+            
+            for tok in tokens {
+                writeln!(buffer, "{}", tok).unwrap();
             }
-            Err(err) => {
-                eprintln!("{}", err);
+
+            print!("{err_buff}");
+            print!("{buffer}");
+            
+            if !err_buff.is_empty() {
                 process::exit(65);
             }
         },
-        "parse" => match tokenize(file_contents).and_then(|(tokens, _)| parse(tokens)) {
-            Ok(ast) => println!("{}", ast),
-            Err(err) => {
-                eprintln!("{}", err);
+        "parse" => {
+            let (tokens, err_buff) = tokenize(file_contents);
+
+            if !err_buff.is_empty() {
+                print!("{}", err_buff);
                 process::exit(65);
             }
+
+            let op = _parse(tokens);
+
+            match op {
+                Ok(a) => println!("{}", a),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    process::exit(65);
+                }
+            }
+            
         },
         "evaluate" => {
             let mut a = Evaluator;
-            if let Ok(expr) = tokenize(file_contents).and_then(|(tokens, _)| parse(tokens)) {
-                if let Some(b) = a.evaluate(&expr) {
-                    a.writer(&b);
+            let (tokens, err_buff) = tokenize(file_contents);
+
+            if !err_buff.is_empty() {
+                print!("{}", err_buff);
+                process::exit(65);
+            }
+
+            let p = _parse(tokens);
+
+            if let Ok(expr) = p {
+                if let Some(val) = a.evaluate(&expr) {
+                    a.writer(&val);
                 }
             }
         }
