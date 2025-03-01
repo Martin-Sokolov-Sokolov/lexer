@@ -13,7 +13,7 @@ pub enum Expr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Lit(Literal::False(b)) | Expr::Lit(Literal::True(b)) => write!(f, "{}", b),
+            Expr::Lit(Literal::Boolean(b)) => write!(f, "{}", b),
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
             Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
@@ -102,12 +102,11 @@ impl BinaryOp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Literal {
     Number(f64),
     Str(String),
-    True(bool),
-    False(bool),
+    Boolean(bool),
     Nil,
 }
 
@@ -177,10 +176,10 @@ impl Parser {
 
     fn primary(&mut self) -> Result<Expr, String> {
         if self.mat(&[TokenType::False]) {
-            return Ok(Expr::Lit(Literal::False(false)));
+            return Ok(Expr::Lit(Literal::Boolean(false)));
         }
         else if self.mat(&[TokenType::True]) {
-            return Ok(Expr::Lit(Literal::True(true)));
+            return Ok(Expr::Lit(Literal::Boolean(true)));
         }
         else if self.mat(&[TokenType::Nil]) {
             return Ok(Expr::Lit(Literal::Nil));

@@ -55,10 +55,6 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn is_empty(&self) -> bool {
-        return self.token_type == TokenType::Empty;
-    }
-
     pub fn unescape(s: & str) -> Cow<str> {
         Cow::Borrowed(s.trim_matches('"'))
     }

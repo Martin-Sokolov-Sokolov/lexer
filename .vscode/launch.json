@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["parse", "poem.txt"],
+            "args": ["evaluate", "poem.txt"],
             "cwd": "${workspaceFolder}"
         },
         {
