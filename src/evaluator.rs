@@ -17,7 +17,7 @@ trait Visitor {
 impl Visitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Option<Box<dyn Any>> {
         match expr {
-            Literal::Nil => None,
+            Literal::Nil => Some(Box::new("nil".to_string())),
             Literal::False(b) => Some(Box::from(*b)),
             Literal::True(b) => Some(Box::from(*b)),
             Literal::Number(n) => Some(Box::from(*n)),
