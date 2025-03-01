@@ -17,7 +17,7 @@ trait Visitor {
 impl Visitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Option<Box<dyn Any>> {
         match expr {
-            Literal::Nil => Some(Box::new("nil".to_string())),
+            Literal::Nil => Some(Box::new(Literal::Nil)),
             Literal::False(b) => Some(Box::from(*b)),
             Literal::True(b) => Some(Box::from(*b)),
             Literal::Number(n) => Some(Box::from(*n)),
@@ -60,17 +60,23 @@ impl Evaluator {
     }
 
     pub fn is_truthy(&self, r: &Box<dyn Any>) -> bool {
-        let _op_bool = r.downcast_ref::<bool>();
-
-        match _op_bool {
-            Some(b) => return *b,
-            None => false,
+        if r.is::<Literal>() {
+            return false;
         }
+
+        if let Some(bool_val) = r.downcast_ref::<bool>() {
+            return *bool_val;
+        }
+
+        return true;
     }
 
     pub fn writer(&self, value: &Box<dyn Any>) {
         if let Some(val) = value.downcast_ref::<f64>() {
             println!("{}", val);
+        }
+        else if let Some(_) = value.downcast_ref::<Literal>() {
+            println!("nil");
         }
         else if let Some(val) = value.downcast_ref::<String>() {
             println!("{}", val);

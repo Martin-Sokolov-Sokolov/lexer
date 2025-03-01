@@ -1,1 +1,1 @@
-"hello" "unterminated
+!10.5
