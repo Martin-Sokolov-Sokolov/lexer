@@ -21,7 +21,7 @@ fn tokenize(file_contents: String) -> Result<(Vec<Token>, String), String> {
                 writeln!(buffer, "{}", token).unwrap();
                 tokens.push(token);
             }
-            Err(err) => println!("{}", err.to_string()),
+            Err(err) => eprintln!("{}", err.to_string()),
             _ => {}
         }
     }
