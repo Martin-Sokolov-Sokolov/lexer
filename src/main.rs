@@ -88,8 +88,13 @@ fn main() {
             let p = _parse(tokens);
 
             if let Ok(expr) = p {
-                if let Some(val) = a.evaluate(&expr) {
-                    a.writer(&val);
+                let result = a.evaluate(&expr);
+                match result {
+                    Ok(_tw) => a.writer(&_tw),
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        process::exit(70);
+                    }
                 }
             }
         }
