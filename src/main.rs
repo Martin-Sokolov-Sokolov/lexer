@@ -69,9 +69,10 @@ fn main() {
         "evaluate" => {
             let mut a = Evaluator;
             if let Ok(expr) = tokenize(file_contents).and_then(|(tokens, _)| parse(tokens)) {
-                a.evaluate(&expr);
+                if let Some(b) = a.evaluate(&expr) {
+                    a.writer(&b);
+                }
             }
-            
         }
         _ => {}
     }
