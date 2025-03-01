@@ -62,21 +62,21 @@ impl Visitor for Evaluator {
                     res.push_str(r);
                     return Ok(Box::new(res));
                 }
-                Err(String::new())
+                Err("Operands must be two numbers or two strings.".to_string())
             }
             BinaryOp::Subtract => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l - r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::Multiply => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l * r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::Divide => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
@@ -86,21 +86,21 @@ impl Visitor for Evaluator {
                     }
                     return Ok(Box::new(l / r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::Greater => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l > r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::GreaterEqual => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l >= r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
 
             }
             BinaryOp::Less => {
@@ -108,14 +108,14 @@ impl Visitor for Evaluator {
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l < r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::LessEqual => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Ok(Box::new(l <= r))
                 }
-                Err(String::new())
+                Err("Operands must be numbers.".to_string())
             }
             BinaryOp::EqualEqual => {
                 return Ok(Box::new(self.is_equal(&_op_left, &_op_right)));
