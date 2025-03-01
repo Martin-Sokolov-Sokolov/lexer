@@ -4,44 +4,49 @@ use crate::parser::{BinaryOp, Expr, Literal, UnaryOp};
 pub struct Evaluator;
 
 trait Accept {
-    fn accept(&self, visitor: &mut dyn Visitor) -> Option<Box<dyn Any>>;
+    fn accept(&self, visitor: &mut dyn Visitor) -> Result<Box<dyn Any>, String>;
 }
 
 trait Visitor {
-    fn visit_literal(&self, lit: &Literal) -> Option<Box<dyn Any>>;
-    fn visit_grouping(&mut self, gr: &Box<Expr>) -> Option<Box<dyn Any>>;
-    fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Option<Box<dyn Any>>;
-    fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Option<Box<dyn Any>>;
+    fn visit_literal(&self, lit: &Literal) -> Result<Box<dyn Any>, String>;
+    fn visit_grouping(&mut self, gr: &Box<Expr>) -> Result<Box<dyn Any>, String>;
+    fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Result<Box<dyn Any>, String>;
+    fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Result<Box<dyn Any>, String>;
 }
 
 impl Visitor for Evaluator {
-    fn visit_literal(&self, expr: &Literal) -> Option<Box<dyn Any>> {
+    fn visit_literal(&self, expr: &Literal) -> Result<Box<dyn Any>, String> {
         match expr {
-            Literal::Nil => Some(Box::new(Literal::Nil)),
-            Literal::Boolean(b) => Some(Box::from(*b)),
-            Literal::Number(n) => Some(Box::from(*n)),
-            Literal::Str(str) => Some(Box::new(str.clone())),
+            Literal::Nil => Ok(Box::new(Literal::Nil)),
+            Literal::Boolean(b) => Ok(Box::from(*b)),
+            Literal::Number(n) => Ok(Box::from(*n)),
+            Literal::Str(str) => Ok(Box::new(str.clone())),
         }
     }
 
-    fn visit_grouping(&mut self, box_expr: &Box<Expr>) -> Option<Box<dyn Any>> {
+    fn visit_grouping(&mut self, box_expr: &Box<Expr>) -> Result<Box<dyn Any>, String> {
         self.evaluate(&box_expr)
     }
     
-    fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Option<Box<dyn Any>> {
+    fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Result<Box<dyn Any>, String> {
         let _r = self.evaluate(&un)?;
         match op {
             UnaryOp::Negate => {
-                let num = _r.downcast_ref::<f64>()?;
-                return Some(Box::new(-num));
+                let _num = _r.downcast_ref::<f64>();
+                if let Some(num) = _num {
+                    return Ok(Box::new(-num));
+                }
+                else {
+                    return Err("Operand must be a number.".to_string());
+                }
             },
             UnaryOp::Not => {
-                return Some(Box::new(!self.is_truthy(&_r)));
+                return Ok(Box::new(!self.is_truthy(&_r)));
             }
         }
     }
 
-    fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Option<Box<dyn Any>> {
+    fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Result<Box<dyn Any>, String> {
         let _op_left = self.evaluate(&left)?;
         let _op_right = self.evaluate(&right)?;
 
@@ -49,29 +54,29 @@ impl Visitor for Evaluator {
             BinaryOp::Add => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l + r))
+                    return Ok(Box::new(l + r))
                 }
                 let (vl, vr) = (_op_left.downcast_ref::<String>(), _op_right.downcast_ref::<String>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     let mut res = String::from(l);
                     res.push_str(r);
-                    return Some(Box::new(res));
+                    return Ok(Box::new(res));
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::Subtract => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l - r))
+                    return Ok(Box::new(l - r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::Multiply => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l * r))
+                    return Ok(Box::new(l * r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::Divide => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
@@ -79,45 +84,46 @@ impl Visitor for Evaluator {
                     if *r == 0.0 {
                         process::exit(65);
                     }
-                    return Some(Box::new(l / r))
+                    return Ok(Box::new(l / r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::Greater => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l > r))
+                    return Ok(Box::new(l > r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::GreaterEqual => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l >= r))
+                    return Ok(Box::new(l >= r))
                 }
-                None
+                Err(String::new())
+
             }
             BinaryOp::Less => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l < r))
+                    return Ok(Box::new(l < r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::LessEqual => {
                 let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
-                    return Some(Box::new(l <= r))
+                    return Ok(Box::new(l <= r))
                 }
-                None
+                Err(String::new())
             }
             BinaryOp::EqualEqual => {
-                return Some(Box::new(self.is_equal(&_op_left, &_op_right)));
+                return Ok(Box::new(self.is_equal(&_op_left, &_op_right)));
             }
             BinaryOp::NotEquals => {
-                return Some(Box::new(!self.is_equal(&_op_left, &_op_right)));
+                return Ok(Box::new(!self.is_equal(&_op_left, &_op_right)));
             }
-            _ => return None,
+            _ => return Err(String::new()),
         }
 
     }
@@ -125,7 +131,7 @@ impl Visitor for Evaluator {
 }
 
 impl Accept for Expr {
-    fn accept(&self, visitor: &mut dyn Visitor) -> Option<Box<dyn Any>> {
+    fn accept(&self, visitor: &mut dyn Visitor) -> Result<Box<dyn Any>, String> {
         match self {
             Expr::Lit(l) => visitor.visit_literal(l),
             Expr::Grouping(gr) => visitor.visit_grouping(gr),
@@ -136,7 +142,7 @@ impl Accept for Expr {
 }
 
 impl Evaluator {
-    pub fn evaluate(&mut self, expr: &Expr) -> Option<Box<dyn Any>> {
+    pub fn evaluate(&mut self, expr: &Expr) -> Result<Box<dyn Any>, String> {
         expr.accept(self)
     }
 
