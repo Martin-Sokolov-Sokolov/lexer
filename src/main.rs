@@ -61,12 +61,7 @@ fn main() {
             }
         },
         "parse" => {
-            let (tokens, err_buff) = tokenize(file_contents);
-
-            if !err_buff.is_empty() {
-                print!("{}", err_buff);
-                process::exit(65);
-            }
+            let (tokens, _) = tokenize(file_contents);
 
             let op = _parse(tokens);
 
