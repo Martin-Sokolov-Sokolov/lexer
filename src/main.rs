@@ -55,7 +55,7 @@ fn main() {
 
             writeln!(buffer, "EOF  null").unwrap();
 
-            print!("{err_buff}");
+            eprint!("{err_buff}");
             print!("{buffer}");
             
             if !err_buff.is_empty() {
