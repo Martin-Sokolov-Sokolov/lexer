@@ -84,28 +84,28 @@ impl Visitor for Evaluator {
                 None
             }
             BinaryOp::Greater => {
-                let (vl, vr) = (_op_left.downcast_ref::<bool>(), _op_right.downcast_ref::<bool>());
+                let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Some(Box::new(l > r))
                 }
                 None
             }
             BinaryOp::GreaterEqual => {
-                let (vl, vr) = (_op_left.downcast_ref::<bool>(), _op_right.downcast_ref::<bool>());
+                let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Some(Box::new(l >= r))
                 }
                 None
             }
             BinaryOp::Less => {
-                let (vl, vr) = (_op_left.downcast_ref::<bool>(), _op_right.downcast_ref::<bool>());
+                let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Some(Box::new(l < r))
                 }
                 None
             }
             BinaryOp::LessEqual => {
-                let (vl, vr) = (_op_left.downcast_ref::<bool>(), _op_right.downcast_ref::<bool>());
+                let (vl, vr) = (_op_left.downcast_ref::<f64>(), _op_right.downcast_ref::<f64>());
                 if let (Some(l), Some(r)) = (vl, vr) {
                     return Some(Box::new(l <= r))
                 }
@@ -144,7 +144,7 @@ impl Evaluator {
         if a.type_id() != b.type_id() {
             return false;
         }
-    
+
         if let (Some(a_val), Some(b_val)) = (a.downcast_ref::<String>(), b.downcast_ref::<String>()) {
             return a_val == b_val;
         }
