@@ -160,13 +160,11 @@ impl Evaluator {
 
     pub fn is_truthy(&self, r: &Box<dyn Any>) -> bool {
         if r.is::<Literal>() {
-            if let Some(nil_val) = r.downcast_ref::<Literal>() {
-                match nil_val {
-                    Literal::Nil => return false,
-                    Literal::Boolean(b) => return *b,
-                    _ => return true,
-                }
-            }
+            return false;
+        }
+
+        if let Some(b) = r.downcast_ref::<bool>() {
+            return *b;
         }
 
         return true;
