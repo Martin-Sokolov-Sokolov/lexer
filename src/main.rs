@@ -53,6 +53,8 @@ fn main() {
                 writeln!(buffer, "{}", tok).unwrap();
             }
 
+            writeln!(buffer, "EOF  null").unwrap();
+
             print!("{err_buff}");
             print!("{buffer}");
             
