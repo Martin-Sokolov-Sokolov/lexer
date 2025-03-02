@@ -1,18 +1,8 @@
 use std::{any::Any, process};
-use crate::parser::{BinaryOp, Expr, Literal, UnaryOp};
+
+use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, visitor::{Accept, Visitor}};
 
 pub struct Evaluator;
-
-trait Accept {
-    fn accept(&self, visitor: &mut dyn Visitor) -> Result<Box<dyn Any>, String>;
-}
-
-trait Visitor {
-    fn visit_literal(&self, lit: &Literal) -> Result<Box<dyn Any>, String>;
-    fn visit_grouping(&mut self, gr: &Box<Expr>) -> Result<Box<dyn Any>, String>;
-    fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Result<Box<dyn Any>, String>;
-    fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Result<Box<dyn Any>, String>;
-}
 
 impl Visitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Result<Box<dyn Any>, String> {
@@ -128,17 +118,6 @@ impl Visitor for Evaluator {
 
     }
 
-}
-
-impl Accept for Expr {
-    fn accept(&self, visitor: &mut dyn Visitor) -> Result<Box<dyn Any>, String> {
-        match self {
-            Expr::Lit(l) => visitor.visit_literal(l),
-            Expr::Grouping(gr) => visitor.visit_grouping(gr),
-            Expr::Unary(op, b) => visitor.visit_unary(op, b),
-            Expr::Binary(left, op, right) => visitor.visit_binary(op, left, right),
-        }
-    }
 }
 
 impl Evaluator {
