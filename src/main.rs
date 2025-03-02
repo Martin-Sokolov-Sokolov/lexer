@@ -1,14 +1,22 @@
+mod token;
+mod scanner;
+mod parser;
+mod evaluator;
+mod expr;
+mod visitor;
+mod stmt;
+
 use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
-use parser::Expr;
+use expr::Expr;
 use parser::Parser;
-use scanner::{Scanner, Token, TokenType};
-mod scanner;
-mod parser;
-mod evaluator;
 use evaluator::Evaluator;
+use scanner::Scanner;
+use token::Token;
+use token::TokenType;
+
 
 fn tokenize(file_contents: String) -> (Vec<Token>, String) {
     let tokenizer = Scanner::new(file_contents);
