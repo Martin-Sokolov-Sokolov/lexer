@@ -14,6 +14,7 @@ use expr::Expr;
 use parser::Parser;
 use evaluator::Evaluator;
 use scanner::Scanner;
+use stmt::Stmt;
 use token::Token;
 use token::TokenType;
 
@@ -37,6 +38,14 @@ fn _parse(tokens: Vec<Token>) -> Result<Expr, String> {
     tokens.push(Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line: 0 });
     let mut parser = Parser::new(tokens);
     parser.parse()
+}
+
+fn run_parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, String> {
+    let mut tokens = tokens;
+    tokens.push(Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line: 0 });
+    let mut parser = Parser::new(tokens);
+    let res = parser._parse();
+    res
 }
 
 
@@ -106,6 +115,18 @@ fn main() {
                 }
             }
         }
+        "run" => {
+            let mut evaluator = Evaluator;
+            let (tokens, err_buff) = tokenize(file_contents);
+            if !err_buff.is_empty() {
+                print!("{}", err_buff);
+                process::exit(65);
+            }
+            let stmts = run_parse(tokens).unwrap();
+            evaluator.interpret(stmts);
+        }
+        
+
         _ => {}
     }
 }

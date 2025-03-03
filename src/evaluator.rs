@@ -1,10 +1,10 @@
 use std::{any::Any, process};
 
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, visitor::{Accept, Visitor}};
+use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator;
 
-impl Visitor for Evaluator {
+impl ExprVisitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Result<Box<dyn Any>, String> {
         match expr {
             Literal::Nil => Ok(Box::new(Literal::Nil)),
@@ -175,5 +175,28 @@ impl Evaluator {
         else {
             println!("not implemented");
         }
+    }
+}
+
+impl StmtVisitor for Evaluator {
+    fn visit_expression_stmt(&mut self, stmt: &Box<Expr>) {
+        let _ = self.evaluate(&stmt);
+    }
+    
+    fn visit_print_stmt(&mut self, stmt: &Box<Expr>) {
+        let d = self.evaluate(&stmt).unwrap();
+        self.writer(&d);
+    }
+}
+
+impl Evaluator {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) { 
+        for stmt in stmts {
+            self.execute(&stmt);
+        }
+    }
+
+    fn execute(&mut self, stmt: &Stmt) {
+        stmt.accept(self);
     }
 }

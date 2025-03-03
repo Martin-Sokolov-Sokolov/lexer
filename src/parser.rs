@@ -157,23 +157,33 @@ impl Parser {
         self.expression()
     }
 
-    pub fn _parse(&mut self) -> Result<Stmt, String> {
+    pub fn _parse(&mut self) -> Result<Vec<Stmt>, String> {
         let mut stmts: Vec<Stmt> = Vec::new();
 
         while !self.is_at_end() { 
             stmts.push(self.statement()?);
         }
 
-        return Err("_parse".to_string());
+        return Ok(stmts)
     }
 
     fn statement(&mut self) -> Result<Stmt, String> {
         if self.mat(&[TokenType::Print]) {
-            let expr = self.expression()?;
-            self.consume(&TokenType::SemiColon, "Expected ';' after expression".to_string())?;
-            return Ok(Stmt::PrintStmt(expr));
+            return self.print_statement();
         }
-        Err("Something went wrong".to_string())
+        return self.expression_statement();
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, String> {
+        let expr = self.expression()?;
+        self.consume(&TokenType::SemiColon, "Expect ';' after value.".to_string())?;
+        return Ok(Stmt::PrintStmt(Box::from(expr)));
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, String> {
+        let expr = self.expression()?;
+        self.consume(&TokenType::SemiColon, "Expected ';' after expression.".to_string())?;
+        return Ok(Stmt::ExprStmt(Box::from(expr)));
     }
 
 }

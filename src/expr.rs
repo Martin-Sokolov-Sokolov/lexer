@@ -1,6 +1,6 @@
 use std::{any::Any, borrow::Cow, fmt};
 
-use crate::{token::TokenType, visitor::{Accept, Visitor}};
+use crate::{token::TokenType, visitor::{ExprAccept, ExprVisitor}};
 
 
 
@@ -116,8 +116,8 @@ pub enum Expr {
     Grouping(Box<Expr>),
 }
 
-impl Accept for Expr {
-    fn accept(&self, visitor: &mut dyn Visitor) -> Result<Box<dyn Any>, String> {
+impl ExprAccept for Expr {
+    fn accept(&self, visitor: &mut dyn ExprVisitor) -> Result<Box<dyn Any>, String> {
         match self {
             Expr::Lit(l) => visitor.visit_literal(l),
             Expr::Grouping(gr) => visitor.visit_grouping(gr),
