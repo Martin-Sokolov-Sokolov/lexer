@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use crate::{expr::Expr, visitor::{StmtAccept, StmtVisitor}};
 
 pub enum Stmt {
@@ -8,7 +6,7 @@ pub enum Stmt {
 }
 
 impl StmtAccept for Stmt {
-    fn accept(&self, visitor: &mut dyn StmtVisitor) {
+    fn accept(&self, visitor: &mut dyn StmtVisitor) -> Result<(), String> {
         match self {
             Stmt::ExprStmt(es) => visitor.visit_expression_stmt(es),
             Stmt::PrintStmt(ps) => visitor.visit_print_stmt(ps),

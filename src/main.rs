@@ -122,8 +122,16 @@ fn main() {
                 print!("{}", err_buff);
                 process::exit(65);
             }
-            let stmts = run_parse(tokens).unwrap();
-            evaluator.interpret(stmts);
+            let stmts = run_parse(tokens);
+
+            if let Err(_) = stmts {
+                process::exit(65);
+            }
+
+            let st = stmts.unwrap();
+
+            let _ = evaluator.interpret(st);
+
         }
         
 

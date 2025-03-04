@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt};
+use crate::expr::{BinaryOp, Expr, Literal, UnaryOp};
 
 pub trait ExprVisitor {
     fn visit_literal(&self, lit: &Literal) -> Result<Box<dyn Any>, String>;
@@ -14,10 +14,10 @@ pub trait ExprAccept {
 }
 
 pub trait StmtVisitor {
-    fn visit_expression_stmt(&mut self, stmt: &Box<Expr>);
-    fn visit_print_stmt(&mut self, stmt: &Box<Expr>);
+    fn visit_expression_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
+    fn visit_print_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
 }
 
 pub trait StmtAccept {
-    fn accept(&self, visitor: &mut dyn StmtVisitor);
+    fn accept(&self, visitor: &mut dyn StmtVisitor) -> Result<(), String>;
 }
