@@ -107,7 +107,7 @@ impl <'a> Scanner <'a> {
     }
 
     fn peek(&self) -> char {
-        self.source.chars().nth(self.current).unwrap()
+        self.source.chars().nth(self.current).unwrap_or_else(|| '\0')
     }
 
     fn slash(&mut self) -> Option<TokenType> {
