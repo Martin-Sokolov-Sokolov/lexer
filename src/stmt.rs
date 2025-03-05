@@ -1,7 +1,15 @@
-use crate::expr::Expr;
+use crate::{expr::Expr, visitor::{StmtAccept, StmtVisitor}};
 
 pub enum Stmt {
-    ExprStmt(Expr),
-    PrintStmt(Expr),
+    ExprStmt(Box<Expr>),
+    PrintStmt(Box<Expr>),
 }
 
+impl StmtAccept for Stmt {
+    fn accept(&self, visitor: &mut dyn StmtVisitor) -> Result<(), String> {
+        match self {
+            Stmt::ExprStmt(es) => visitor.visit_expression_stmt(es),
+            Stmt::PrintStmt(ps) => visitor.visit_print_stmt(ps),
+        }
+    }
+}
