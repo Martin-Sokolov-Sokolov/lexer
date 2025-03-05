@@ -97,8 +97,8 @@ impl <'a> Parser <'a> {
         else if let TokenType::String(s) = token_type {
             if self.mat(&[TokenType::String(s.to_string())]) {
                 if let Some(lit) = &self.previous()?.literal {
-                    if let Some(str_val) = lit.downcast_ref::<&str>() {
-                        return Ok(Expr::Lit(Literal::Str(String::from(*str_val))));
+                    if let Some(str_val) = lit.downcast_ref::<String>() {
+                        return Ok(Expr::Lit(Literal::Str(String::from(str_val))));
                     }
                 }
             }

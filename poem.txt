@@ -1,1 +1,1 @@
-print "non-ascii: ॐ";
+print "hello" == "quz";
