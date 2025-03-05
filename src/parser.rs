@@ -1,13 +1,16 @@
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, token::{Token, TokenType}};
+use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, token::{self, Token, TokenType}};
 
-pub struct Parser {
-    tokens: Vec<Token>,
+pub struct Parser <'a> {
+    tokens: &'a Vec<Token>,
     current: usize
 }
 
-impl Parser {
-    pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0}
+impl <'a> Parser <'a> {
+    pub fn new(tokens: &'a Vec<Token>) -> Self {
+        Self { 
+            tokens,
+            current: 0
+        }
     }
 
     fn expression(&mut self) -> Result<Expr, String> {
@@ -74,13 +77,6 @@ impl Parser {
         else if self.mat(&[TokenType::Nil]) {
             return Ok(Expr::Lit(Literal::Nil));
         }
-        else if self.mat(&[TokenType::String]) {
-            if let Some(lit) = &self.previous()?.literal {
-                if let Some(str_val) = lit.downcast_ref::<String>() {
-                    return Ok(Expr::Lit(Literal::Str(str_val.to_string())));
-                }
-            }
-        }
         else if self.mat(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
 
@@ -88,10 +84,9 @@ impl Parser {
 
             return Ok(Expr::Grouping(Box::from(expr)));
         }
-        
-        let p = self.peek();
-        if let TokenType::Number(n) = p.token_type {
-            if self.mat(&[TokenType::Number(n)]) {
+        let token_type = &self.peek().token_type;
+        if let TokenType::Number(n) = token_type {
+            if self.mat(&[TokenType::Number(*n)]) {
                 if let Some(lit) = &self.previous()?.literal {
                     if let Some(num_val) = lit.downcast_ref::<f64>() {
                         return Ok(Expr::Lit(Literal::Number(*num_val)));
@@ -99,6 +94,16 @@ impl Parser {
                 }
             }
         }
+        else if let TokenType::String(s) = token_type {
+            if self.mat(&[TokenType::String(s.to_string())]) {
+                if let Some(lit) = &self.previous()?.literal {
+                    if let Some(str_val) = lit.downcast_ref::<&str>() {
+                        return Ok(Expr::Lit(Literal::Str(String::from(*str_val))));
+                    }
+                }
+            }
+         }
+
         let a = self.peek();
         Err(format!("[line {}] Error at '{}': Expect expression.", a.line, a.lexeme))
     }

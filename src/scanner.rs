@@ -3,120 +3,93 @@ use crate::token::{Token, TokenType};
 
 
 #[derive(Debug)]
-pub struct Scanner {
-    source: String,
+pub struct Scanner <'a> {
+    source: &'a str,
     start: usize,
     current: usize,
     line: usize,
+    pub tokens: Vec<Token>,
+    pub code:i32,
 }
 
-impl Iterator for Scanner {
-    type Item = Result<Token, String>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while !self.is_at_end() {
-            self.start = self.current;
-            let res = self.scan_token_alternative();
-
-            match res {
-                Ok(tok) if tok.token_type == TokenType::Empty => continue,
-                _ => return Some(res),
-            }
-        }
-        None
-    }
-}
-
-impl Scanner {
-    pub fn new(source: String) -> Self {
+impl <'a> Scanner <'a> {
+    pub fn new(source: &'a str) -> Self {
         Scanner {
             source,
             start: 0,
             current: 0,
             line: 1,
+            tokens: Vec::new(),
+            code: 0,
         }
     }
 
-    fn scan_token_alternative(&mut self) -> Result<Token, String> {
+    pub fn scan_tokens(&mut self) -> &Vec<Token> {
+        while !self.is_at_end() {
+            self.start = self.current;
+            self.scan_token_alternative();
+        }
+        self.tokens.push(Token { token_type: TokenType::EOF, lexeme: "null".to_string(), literal: None, line: 1 });
+
+        &self.tokens
+    }
+
+    fn scan_token_alternative(&mut self) {
         let c = self.advance();
 
-        let res = match c {
+        let _ = match c {
 
-            '(' => self.return_token(TokenType::LeftParen),
-            ')' => self.return_token(TokenType::RightParen),
-            '{' => self.return_token(TokenType::LeftBrace),
-            '}' => self.return_token(TokenType::RightBrace),
-            '*' => self.return_token(TokenType::Star),
-            ',' => self.return_token(TokenType::Comma),
-            '+' => self.return_token(TokenType::Plus),
-            '.' => self.return_token(TokenType::Dot),
-            '-' => self.return_token(TokenType::Minus),
-            ';' => self.return_token(TokenType::SemiColon),
+            '(' => self.add_token(TokenType::LeftParen),
+            ')' => self.add_token(TokenType::RightParen),
+            '{' => self.add_token(TokenType::LeftBrace),
+            '}' => self.add_token(TokenType::RightBrace),
+            '*' => self.add_token(TokenType::Star),
+            ',' => self.add_token(TokenType::Comma),
+            '+' => self.add_token(TokenType::Plus),
+            '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
+            ';' => self.add_token(TokenType::SemiColon),
             '!' => {
                 let token_type = if !self.match_next('=') {TokenType::Bang} else {TokenType::BangEqual};
-                self.return_token(token_type)
+                self.add_token(token_type)
             }
             '=' => {
                 let token_type = if !self.match_next('=') {TokenType::Equal} else {TokenType::EqualEqual};
-                self.return_token(token_type)
+                self.add_token(token_type)
             }
             '<' => {
                 let token_type = if !self.match_next('=') {TokenType::Less} else {TokenType::LessEqual};
-                self.return_token(token_type)
+                self.add_token(token_type)
 
             }
             '>' => {
                 let token_type = if !self.match_next('=') {TokenType::Greater} else {TokenType::GreaterEqual};
-                self.return_token(token_type)
+                self.add_token(token_type)
             }
             '/' => {
                 if let Some(token_type) = self.slash() {
-                    self.return_token(token_type)
-                }
-                else {
-                    self.return_token(TokenType::Empty)
+                    self.add_token(token_type)
                 }
             }
-            '\n' => {
-                self.line += 1;
-                self.return_token(TokenType::Empty)
-            },
-            ' ' => self.return_token(TokenType::Empty),
-            '\r' => self.return_token(TokenType::Empty),
-            '\t' => self.return_token(TokenType::Empty),
-            '"' => {
-                if let Ok(token) = self.make_string_alternative() {
-                    token
-                }
-                else {
-                    return Err(format!("[line {}] Error: Unterminated string.", self.line));
-                }
-            }
-            '0'..='9' => {
-                if let Ok(token) = self.number_alternative() {
-                    token
-                }
-                else {
-                    return Err(String::from("number error"));
-                }
-            }
-            'a'..='z' | 'A'..='Z' | '_' => {
-                if let Ok(token) = self.make_identifier_alternative() {
-                    token
-                }
-                else {
-                    return Err(String::from("ident error"));
-                }
-            }
+            '\n' => self.line += 1,
+            ' ' => (),
+            '\r' => (),
+            '\t' => (),
+            '"' => self.make_string_alternative(),
+            '0'..='9' => self.number_alternative(),
+            'a'..='z' | 'A'..='Z' | '_' => self.make_identifier_alternative(),
+            '\0' => (),
 
-            _ => return Err(format!("[line {}] Error: Unexpected character: {}", self.line, c)),
+            _ => {
+                eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
+                println!("{}", c.to_ascii_lowercase() as u8);
+                self.code = 65;
+            }
         };
-
-        Ok(res)
     }
 
     fn match_next(&mut self, c: char) -> bool {
-        if self.is_at_end() || self.source.chars().nth(self.current).unwrap_or_else(|| return '\0') != c {
+        if self.is_at_end() || self.source.chars().nth(self.current).unwrap() != c {
             return false;
         }
         self.current += 1;
@@ -124,17 +97,17 @@ impl Scanner {
     }
 
     fn advance (&mut self) -> char {
-        let temp = self.current;
+        let temp = self.current.clone();
         self.current += 1;
-        self.source.chars().nth(temp).unwrap_or_else(|| return '\0')
+        self.source.chars().nth(temp).unwrap_or_else(|| '\0')
     }
 
     fn is_at_end(&self) -> bool {
-        self.current >= self.source.len()
+        self.current >= self.source.len() 
     }
 
     fn peek(&self) -> char {
-        self.source.chars().nth(self.current).unwrap_or_else(|| return '\0')
+        self.source.chars().nth(self.current).unwrap()
     }
 
     fn slash(&mut self) -> Option<TokenType> {
@@ -142,7 +115,6 @@ impl Scanner {
             while !self.is_at_end() && self.peek() != '\n' {
                 self.advance();
             }
-
             None
         }
         else {
@@ -150,41 +122,37 @@ impl Scanner {
         }
     }
 
-    fn return_token(&self, token_type: TokenType) -> Token {
-        self.return_token_helper(token_type, Some(Box::new(String::from("null"))))
+    fn add_token(&mut self, token_type: TokenType) {
+        self.add_token_helper(token_type, Some(Box::new(String::from("null"))));
     }
 
-    fn return_token_helper(&self, token_type: TokenType, literal: Option<Box<dyn Any>>) -> Token {
-        let text = &self.source[self.start..self.current];
-        Token {token_type, lexeme: String::from(text), literal, line:self.line}
+    fn add_token_helper(&mut self, token_type: TokenType, literal: Option<Box<dyn Any>>) {
+        let text: &String = &self.source.chars().take(self.current).skip(self.start).collect();
+        self.tokens.push(Token {token_type, lexeme: String::from(text), literal, line:self.line});
     }
 
-    fn make_string_alternative(&mut self) -> Result<Token, String> {
+    fn make_string_alternative(&mut self) {
         while !self.is_at_end() && self.peek() != '"' {
             self.advance();
         }
-
         if self.is_at_end() {
-            Err(format!("[line {}] Error: Unterminated string.", self.line))
-        }
+            eprintln!("[line {}] Error: Unterminated string.", self.line);
+        } 
         else {
             self.advance();
-            let text = &self.source[self.start..self.current];
+    
+            let text: String = self.source.chars().take(self.current).skip(self.start).collect();
             let lit = text.replace('"', "");
-            return Ok(Token{token_type: TokenType::String, lexeme: String::from(text), literal: Some(Box::new(lit)), line:self.line});
+    
+            self.add_token_helper(TokenType::String(text), Some(Box::new(lit)));
         }
     }
-
+    
     fn peek_next(&self) -> char {
-        if self.current + 1 >= self.source.len() {
-            return '\0';
-        }
-        else {
-            return self.source.chars().nth(self.current+1).unwrap();
-        }
+        return self.source.chars().nth(self.current+1).unwrap();
     }
 
-    fn number_alternative(&mut self) -> Result<Token, ()> {
+    fn number_alternative(&mut self) {
         while !self.is_at_end() && is_digit(self.peek()) {
             self.advance();
         }
@@ -201,10 +169,10 @@ impl Scanner {
 
         let num_str = &self.source[self.start..self.current];
         let n = normalize_number_string(num_str);
-        return Ok(self.return_token_helper(TokenType::Number(n), Some(Box::new(n))));
+        self.add_token_helper(TokenType::Number(n), Some(Box::new(n)));
     }
 
-    fn make_identifier_alternative(&mut self) -> Result<Token, ()> {
+    fn make_identifier_alternative(&mut self) {
         while !self.is_at_end() && is_alpha_numric(self.peek()) {
             self.advance();
         }
@@ -228,7 +196,7 @@ impl Scanner {
             "while" => TokenType::While,
             _ => TokenType::Identifier,
         };
-        Ok(self.return_token(kind))
+        self.add_token(kind);
 
     }
 

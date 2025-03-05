@@ -2,7 +2,7 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::fmt;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -23,7 +23,7 @@ pub enum TokenType {
     Slash,
     Bang,
     Equal,
-    String,
+    String(String),
     Identifier,
     Number(f64),
     And,
@@ -42,7 +42,6 @@ pub enum TokenType {
     True,
     Var,
     While,
-    Empty,
     EOF
 }
 
@@ -63,7 +62,7 @@ impl Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let origin = self.lexeme.clone();
-        match self.token_type {
+        match &self.token_type {
             TokenType::LeftParen => write!(f, "LEFT_PAREN {origin} null"),
             TokenType::RightParen => write!(f, "RIGHT_PAREN {origin} null"),
             TokenType::LeftBrace => write!(f, "LEFT_BRACE {origin} null"),
@@ -83,10 +82,10 @@ impl fmt::Display for Token {
             TokenType::Slash => write!(f, "SLASH {origin} null"),
             TokenType::Bang => write!(f, "BANG {origin} null"),
             TokenType::Equal => write!(f, "EQUAL {origin} null"),
-            TokenType::String => write!(f, "STRING {origin} {}", Token::unescape(&origin)),
+            TokenType::String(_) => write!(f, "STRING {origin} {}", Token::unescape(&origin)),
             TokenType::Identifier => write!(f, "IDENTIFIER {origin} null"),
             TokenType::Number(n) => {
-                if n == n.trunc() {
+                if *n == n.trunc() {
                     write!(f, "NUMBER {origin} {n}.0")
                 } else {
                     write!(f, "NUMBER {origin} {n}")
@@ -108,7 +107,6 @@ impl fmt::Display for Token {
             TokenType::True => write!(f, "TRUE {origin} null"),
             TokenType::Var => write!(f, "VAR {origin} null"),
             TokenType::While => write!(f, "WHILE {origin} null"),
-            TokenType::Empty => write!(f, ""),
             TokenType::EOF => write!(f, "EOF  null"),
         }
     }
