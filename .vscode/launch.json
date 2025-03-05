@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["parse", "poem.txt"],
+            "args": ["tokenize", "poem.txt"],
             "cwd": "${workspaceFolder}"
         },
         {

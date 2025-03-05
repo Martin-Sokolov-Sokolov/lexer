@@ -82,7 +82,6 @@ impl <'a> Scanner <'a> {
 
             _ => {
                 eprintln!("[line {}] Error: Unexpected character: {}", self.line, c);
-                println!("{}", c.to_ascii_lowercase() as u8);
                 self.code = 65;
             }
         };
