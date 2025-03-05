@@ -136,6 +136,7 @@ impl <'a> Scanner <'a> {
             self.advance();
         }
         if self.is_at_end() {
+            self.code = 65;
             eprintln!("[line {}] Error: Unterminated string.", self.line);
         } 
         else {

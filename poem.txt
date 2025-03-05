@@ -1,1 +1,1 @@
-10 + "bar" + 50
+"foo" "unterminated
