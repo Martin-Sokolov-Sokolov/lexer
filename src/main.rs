@@ -53,7 +53,7 @@ fn main() {
             }
         },
         "evaluate" => {
-            let mut a = Evaluator;
+            let mut a = Evaluator::new();
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);
@@ -76,7 +76,7 @@ fn main() {
             }
         }
         "run" => {
-            let mut a = Evaluator;
+            let mut a = Evaluator::new();
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);

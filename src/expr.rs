@@ -14,6 +14,7 @@ impl fmt::Display for Expr {
             Expr::Binary(left, operator, right) => write!(f, "({} {} {})", operator, left, right),
             Expr::Unary(operator, right) => write!(f, "({} {})", operator, right),
             Expr::Grouping(expr) => write!(f, "(group {})", expr),
+            Expr::Variable(s) => write!(f, "{}", s),
         }
     }
 }
@@ -114,6 +115,7 @@ pub enum Expr {
     Unary(UnaryOp, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Grouping(Box<Expr>),
+    Variable(String),
 }
 
 impl ExprAccept for Expr {
@@ -123,6 +125,7 @@ impl ExprAccept for Expr {
             Expr::Grouping(gr) => visitor.visit_grouping(gr),
             Expr::Unary(op, b) => visitor.visit_unary(op, b),
             Expr::Binary(left, op, right) => visitor.visit_binary(op, left, right),
+            Expr::Variable(s) => visitor.visit_variable(s),
         }
     }
 }

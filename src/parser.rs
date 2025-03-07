@@ -1,4 +1,4 @@
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, token::{self, Token, TokenType}};
+use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, token::{Token, TokenType}};
 
 pub struct Parser <'a> {
     tokens: &'a Vec<Token>,
@@ -79,11 +79,10 @@ impl <'a> Parser <'a> {
         }
         else if self.mat(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
-
             self.consume(&TokenType::RightParen, "Expect ')' after expression.".to_string())?;
-
             return Ok(Expr::Grouping(Box::from(expr)));
         }
+
         let token_type = &self.peek().token_type;
         if let TokenType::Number(n) = token_type {
             if self.mat(&[TokenType::Number(*n)]) {
@@ -102,7 +101,14 @@ impl <'a> Parser <'a> {
                     }
                 }
             }
-         }
+        }
+        else if self.mat(&[TokenType::Identifier]) {
+            if let Some(lit) = &self.previous()?.literal {
+                if let Some(str_val) = lit.downcast_ref::<String>() {
+                    return Ok(Expr::Variable(String::from(str_val)));
+                }
+            }
+        }
 
         let a = self.peek();
         Err(format!("[line {}] Error at '{}': Expect expression.", a.line, a.lexeme))
@@ -172,6 +178,24 @@ impl <'a> Parser <'a> {
         return Ok(stmts)
     }
 
+    fn declaration(&mut self) -> Result<Stmt, String> {
+        if self.mat(&[TokenType::Var]) {
+            return self.var_declaration();
+        }
+        self.statement()
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, String> {
+        let name = {self.consume(&TokenType::Identifier, "Expect variable name.".to_string())?}.to_string();
+        let mut initializer: Option<Expr> = None;
+        if self.mat(&[TokenType::Equal]) {
+            initializer = Some(self.expression()?);
+        }
+        self.consume(&TokenType::SemiColon, "Expect ';' after variable declaration.".to_string())?;
+        
+        return Ok(Stmt::Declaration { id: name.to_string(), initializer: initializer });
+    }
+
     fn statement(&mut self) -> Result<Stmt, String> {
         if self.mat(&[TokenType::Print]) {
             return self.print_statement();
@@ -190,5 +214,26 @@ impl <'a> Parser <'a> {
         self.consume(&TokenType::SemiColon, "Expected ';' after expression.".to_string())?;
         return Ok(Stmt::ExprStmt(Box::from(expr)));
     }
+
+    fn synchronize(&mut self) -> Result<(), String> {
+        self.advance()?;
+        while !self.is_at_end() {
+
+            if self.previous()?.token_type == TokenType::SemiColon {
+                return Ok(());
+            }
+            match self.peek().token_type {
+                TokenType::Class | TokenType::Fun | TokenType::Var | TokenType::For |
+                TokenType::If | TokenType::While | TokenType::Print | TokenType::Return => {
+                    return Ok(());
+                }
+                _ => {}
+            }
+            self.advance()?;
+        
+        }
+        Ok(())
+    }
+    
 
 }
