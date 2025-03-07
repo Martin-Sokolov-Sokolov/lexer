@@ -7,6 +7,7 @@ pub trait ExprVisitor {
     fn visit_grouping(&mut self, gr: &Box<Expr>) -> Result<Box<dyn Any>, String>;
     fn visit_unary(&mut self, op: &UnaryOp, un: &Box<Expr>) -> Result<Box<dyn Any>, String>;
     fn visit_binary(&mut self, op: &BinaryOp, left: &Box<Expr>, right: &Box<Expr>) -> Result<Box<dyn Any>, String>;
+    fn visit_variable(&mut self, s: &String) -> Result<Box<dyn Any>, String>;
 }
 
 pub trait ExprAccept {
@@ -16,6 +17,7 @@ pub trait ExprAccept {
 pub trait StmtVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
     fn visit_print_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
+    fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String>;
 }
 
 pub trait StmtAccept {

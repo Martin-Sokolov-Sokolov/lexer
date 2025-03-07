@@ -1,8 +1,10 @@
-use std::{any::Any, process};
+use std::{any::Any, collections::HashMap, process};
 
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
-pub struct Evaluator;
+pub struct Evaluator {
+    env: HashMap<String, Box<dyn Any>>,
+}
 
 impl ExprVisitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Result<Box<dyn Any>, String> {
@@ -117,12 +119,23 @@ impl ExprVisitor for Evaluator {
         }
 
     }
+    
+    fn visit_variable(&mut self, s: &String) -> Result<Box<dyn Any>, String> {
+        todo!()
+    }
+    
 
 }
 
 impl Evaluator {
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Box<dyn Any>, String> {
         expr.accept(self)
+    }
+
+    pub fn new() -> Self {
+        Evaluator {
+            env: HashMap::new(),
+        }
     }
 
     fn is_equal(&self, a: &Box<dyn Any>, b: &Box<dyn Any>) -> bool {
@@ -191,6 +204,10 @@ impl StmtVisitor for Evaluator {
             Ok(d) => Ok(self.writer(&d)),
             Err(e) => Err(e),
         }
+    }
+    
+    fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String> {
+        todo!()
     }
 }
 
