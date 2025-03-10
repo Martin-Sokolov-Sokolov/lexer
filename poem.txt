@@ -1,1 +1,2 @@
-()  @ s
+var a = nil;
+print a;

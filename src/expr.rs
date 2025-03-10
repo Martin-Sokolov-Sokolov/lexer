@@ -19,7 +19,7 @@ impl fmt::Display for Expr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOp {
     Negate,
     Not,   
@@ -44,7 +44,7 @@ impl UnaryOp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BinaryOp {
     Equals,
     EqualEqual,
@@ -109,7 +109,7 @@ pub fn unescape(s: &str) -> Cow<str> {
     Cow::Borrowed(s.trim_matches('"'))
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),

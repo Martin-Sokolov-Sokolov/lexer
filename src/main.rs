@@ -5,11 +5,13 @@ mod evaluator;
 mod expr;
 mod visitor;
 mod stmt;
+mod environment;
 
 use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
+use environment::Environment;
 use parser::Parser;
 use evaluator::Evaluator;
 use scanner::Scanner;
@@ -53,7 +55,8 @@ fn main() {
             }
         },
         "evaluate" => {
-            let mut a = Evaluator::new();
+            let env = Environment::new();
+            let mut a = Evaluator::new(env);
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);
@@ -76,19 +79,22 @@ fn main() {
             }
         }
         "run" => {
-            let mut a = Evaluator::new();
+            let env = Environment::new();
+            let mut a = Evaluator::new(env);
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);
             let stmts = parser._parse();
 
-            if let Err(_) = stmts {
+            if let Err(e) = stmts {
+                eprintln!("{e}");
                 process::exit(65);
             }
 
             let st = stmts.unwrap();
 
             let _ = a.interpret(st);
+            
         }
         _ => {}
     }

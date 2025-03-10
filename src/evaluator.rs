@@ -1,9 +1,10 @@
-use std::{any::Any, collections::HashMap, process};
+use std::{any::Any, process};
+use crate::environment::Environment;
 
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator {
-    env: HashMap<String, Box<dyn Any>>,
+    env: Environment,
 }
 
 impl ExprVisitor for Evaluator {
@@ -120,22 +121,23 @@ impl ExprVisitor for Evaluator {
 
     }
     
-    fn visit_variable(&mut self, s: &String) -> Result<Box<dyn Any>, String> {
-        todo!()
+    fn visit_variable(&mut self, name: &String) -> Result<Box<dyn Any>, String> {
+        let a= self.env.get(name)?;
+
+        if let Some(_val) = a {
+            if let Some(b) = duplicate_boxed_any(_val) {
+                return Ok(b);
+            }
+        }
+
+        return Err("No such variable".to_string());
     }
-    
 
 }
 
 impl Evaluator {
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Box<dyn Any>, String> {
         expr.accept(self)
-    }
-
-    pub fn new() -> Self {
-        Evaluator {
-            env: HashMap::new(),
-        }
     }
 
     fn is_equal(&self, a: &Box<dyn Any>, b: &Box<dyn Any>) -> bool {
@@ -155,6 +157,8 @@ impl Evaluator {
     
         false
     }
+
+
 
     pub fn is_truthy(&self, r: &Box<dyn Any>) -> bool {
         if r.is::<Literal>() {
@@ -191,7 +195,7 @@ impl Evaluator {
     }
 }
 
-impl StmtVisitor for Evaluator {
+impl StmtVisitor for Evaluator  {
     fn visit_expression_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String> {
         match self.evaluate(&stmt) {
             Ok(_) => Ok(()),
@@ -207,8 +211,18 @@ impl StmtVisitor for Evaluator {
     }
     
     fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String> {
-        todo!()
+        
+        let value = if let Some(expr) = initializer {
+            Some(self.evaluate(expr)?)
+        }
+        else {
+            Some(Box::from(Literal::Nil) as Box<dyn Any>)
+        };
+
+        self.env.define(id.to_string(), value);
+        Ok(())
     }
+    
 }
 
 impl Evaluator {
@@ -227,5 +241,29 @@ impl Evaluator {
 
     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
         stmt.accept(self)
+    }
+
+    pub fn new(env: Environment) -> Self {
+        Evaluator {
+            env
+        }
+    }
+}
+
+fn duplicate_boxed_any(input: &Box<dyn Any>) -> Option<Box<dyn Any>> {
+    if let Some(value) = input.downcast_ref::<f64>() {
+        Some(Box::new(*value))
+    } 
+    else if let Some(value) = input.downcast_ref::<String>() {
+        Some(Box::new(value.clone()))
+    }
+    else if let Some(value) = input.downcast_ref::<bool>() {
+        Some(Box::new(*value))
+    }
+    else if let Some(_) = input.downcast_ref::<Literal>() {
+        Some(Box::new(Literal::Nil))
+    }
+    else {
+        None
     }
 }
