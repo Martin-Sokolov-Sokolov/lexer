@@ -14,7 +14,7 @@ impl <'a> Parser <'a> {
     }
 
     fn expression(&mut self) -> Result<Expr, String> {
-        self.equality()
+        self.assignment()
     }
 
     fn equality(&mut self) -> Result<Expr, String> {
@@ -103,11 +103,7 @@ impl <'a> Parser <'a> {
             }
         }
         else if self.mat(&[TokenType::Identifier]) {
-            if let Some(lit) = &self.previous()?.literal {
-                if let Some(str_val) = lit.downcast_ref::<String>() {
-                    return Ok(Expr::Variable(String::from(str_val)));
-                }
-            }
+            return Ok(Expr::Variable(self.previous()?.lexeme.to_string()));
         }
 
         let a = self.peek();
@@ -172,7 +168,7 @@ impl <'a> Parser <'a> {
         let mut stmts: Vec<Stmt> = Vec::new();
 
         while !self.is_at_end() { 
-            stmts.push(self.statement()?);
+            stmts.push(self.declaration()?);
         }
 
         return Ok(stmts)
@@ -182,18 +178,23 @@ impl <'a> Parser <'a> {
         if self.mat(&[TokenType::Var]) {
             return self.var_declaration();
         }
-        self.statement()
+        self.statement().or_else(|err| {
+            self.synchronize()?;
+            Err(err)
+        })
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, String> {
-        let name = {self.consume(&TokenType::Identifier, "Expect variable name.".to_string())?}.to_string();
+        let name = self.consume(&TokenType::Identifier, "Expect variable name.".to_string())?.lexeme.clone();
         let mut initializer: Option<Expr> = None;
         if self.mat(&[TokenType::Equal]) {
             initializer = Some(self.expression()?);
         }
         self.consume(&TokenType::SemiColon, "Expect ';' after variable declaration.".to_string())?;
         
-        return Ok(Stmt::Declaration { id: name.to_string(), initializer: initializer });
+        return Ok(Stmt::Declaration { 
+            id: name.to_string(), initializer: initializer 
+        });
     }
 
     fn statement(&mut self) -> Result<Stmt, String> {
@@ -213,6 +214,24 @@ impl <'a> Parser <'a> {
         let expr = self.expression()?;
         self.consume(&TokenType::SemiColon, "Expected ';' after expression.".to_string())?;
         return Ok(Stmt::ExprStmt(Box::from(expr)));
+    }
+    
+    fn assignment(&mut self) -> Result<Expr, String> {
+        let expr = self.equality()?;
+
+        if self.mat(&[TokenType::Equal]) {
+            let _ = self.previous()?;
+            let val = self.assignment()?;
+
+            match expr {
+                Expr::Variable(t) => {
+                    return Ok(Expr::Assign(t, Box::from(val)));
+                },
+                _ => return Err("Invalid assignment target.".to_string()),
+            }
+        }
+
+        Ok(expr)
     }
 
     fn synchronize(&mut self) -> Result<(), String> {

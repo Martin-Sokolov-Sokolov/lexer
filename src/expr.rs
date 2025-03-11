@@ -15,11 +15,12 @@ impl fmt::Display for Expr {
             Expr::Unary(operator, right) => write!(f, "({} {})", operator, right),
             Expr::Grouping(expr) => write!(f, "(group {})", expr),
             Expr::Variable(s) => write!(f, "{}", s),
+            Expr::Assign(t, _) => write!(f, "{}", t),
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOp {
     Negate,
     Not,   
@@ -44,7 +45,7 @@ impl UnaryOp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BinaryOp {
     Equals,
     EqualEqual,
@@ -116,6 +117,7 @@ pub enum Expr {
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Grouping(Box<Expr>),
     Variable(String),
+    Assign(String, Box<Expr>),
 }
 
 impl ExprAccept for Expr {
@@ -126,6 +128,7 @@ impl ExprAccept for Expr {
             Expr::Unary(op, b) => visitor.visit_unary(op, b),
             Expr::Binary(left, op, right) => visitor.visit_binary(op, left, right),
             Expr::Variable(s) => visitor.visit_variable(s),
+            Expr::Assign(t, v) => visitor.visit_assign(t, v),
         }
     }
 }
