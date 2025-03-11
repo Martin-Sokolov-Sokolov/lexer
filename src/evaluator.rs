@@ -121,8 +121,8 @@ impl ExprVisitor for Evaluator {
 
     }
     
-    fn visit_variable(&mut self, name: &String) -> Result<Box<dyn Any>, String> {
-        let a= self.env.get(name)?;
+    fn visit_variable(&mut self, t: &String) -> Result<Box<dyn Any>, String> {
+        let a= self.env.get(t)?;
 
         if let Some(_val) = a {
             if let Some(b) = duplicate_boxed_any(_val) {
@@ -132,8 +132,21 @@ impl ExprVisitor for Evaluator {
 
         return Err("No such variable".to_string());
     }
+    
+    fn visit_assign(&mut self, s: &String, a: &Box<Expr>) -> Result<Box<dyn Any>, String> {
+        let val = self.evaluate(&**a)?;
+        let to_return = duplicate_boxed_any(&val);
+        self.env.assign(s, Some(val))?;
+        
+        if let Some(op_val) = to_return {
+            return Ok(op_val);
+        }
 
+        return Err("Error at viisit assign".to_string());
+    }
+    
 }
+
 
 impl Evaluator {
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Box<dyn Any>, String> {
@@ -157,8 +170,6 @@ impl Evaluator {
     
         false
     }
-
-
 
     pub fn is_truthy(&self, r: &Box<dyn Any>) -> bool {
         if r.is::<Literal>() {

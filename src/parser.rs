@@ -14,7 +14,7 @@ impl <'a> Parser <'a> {
     }
 
     fn expression(&mut self) -> Result<Expr, String> {
-        self.equality()
+        self.assignment()
     }
 
     fn equality(&mut self) -> Result<Expr, String> {
@@ -103,7 +103,7 @@ impl <'a> Parser <'a> {
             }
         }
         else if self.mat(&[TokenType::Identifier]) {
-            return Ok(Expr::Variable(String::from(&self.previous()?.lexeme)));
+            return Ok(Expr::Variable(self.previous()?.lexeme.to_string()));
         }
 
         let a = self.peek();
@@ -220,10 +220,15 @@ impl <'a> Parser <'a> {
         let expr = self.equality()?;
 
         if self.mat(&[TokenType::Equal]) {
-            let left = self.previous()?;
+            let _ = self.previous()?;
             let val = self.assignment()?;
 
-            
+            match expr {
+                Expr::Variable(t) => {
+                    return Ok(Expr::Assign(t, Box::from(val)));
+                },
+                _ => return Err("Invalid assignment target.".to_string()),
+            }
         }
 
         Ok(expr)
