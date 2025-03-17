@@ -124,7 +124,7 @@ impl ExprVisitor for Evaluator {
     
     fn visit_assign(&mut self, s: &String, a: &Box<Expr>) -> Result<Box<Literal>, String> {
         let val = self.evaluate(&**a)?;
-        self.env.assign(s, Some(val.clone()))?;
+        self.env.assign(s, Some(&val))?;
         return Ok(val);
     }
     

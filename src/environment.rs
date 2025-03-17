@@ -25,9 +25,9 @@ impl Environment {
         Err("Undefined variable.".to_string())
     }
 
-    pub fn assign(&mut self, s: &String, a: Option<Box<Literal>>) -> Result<(), String>{
+    pub fn assign(&mut self, s: &String, a: Option<&Box<Literal>>) -> Result<(), String>{
         if self.values.contains_key(s) {
-            self.values.insert(s.to_string(), a);
+            self.values.insert(s.to_string(), a.cloned());
             return Ok(());
         }
 
@@ -41,7 +41,10 @@ impl Environment {
     }
 
     pub fn new_enclosing(env: &Environment) -> Self {
-        env.clone()
+        Self {
+            values: env.clone().values,
+            enclosing: Box::from(None),
+        }
     }
 
     pub fn new() -> Self {
