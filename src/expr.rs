@@ -1,4 +1,4 @@
-use std::{any::Any, borrow::Cow, fmt};
+use std::{borrow::Cow, fmt};
 
 use crate::{token::TokenType, visitor::{ExprAccept, ExprVisitor}};
 
@@ -98,7 +98,7 @@ impl BinaryOp {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Number(f64),
     Str(String),
@@ -110,7 +110,6 @@ pub fn unescape(s: &str) -> Cow<str> {
     Cow::Borrowed(s.trim_matches('"'))
 }
 
-#[derive(Debug)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),
@@ -121,7 +120,7 @@ pub enum Expr {
 }
 
 impl ExprAccept for Expr {
-    fn accept(&self, visitor: &mut dyn ExprVisitor) -> Result<Box<dyn Any>, String> {
+    fn accept(&self, visitor: &mut dyn ExprVisitor) -> Result<Box<Literal>, String> {
         match self {
             Expr::Lit(l) => visitor.visit_literal(l),
             Expr::Grouping(gr) => visitor.visit_grouping(gr),

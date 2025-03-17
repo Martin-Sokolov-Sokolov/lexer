@@ -1,4 +1,17 @@
-var a;
-var b = 2;
-var a = b = 1;
-print a;
+// This program tests that when a variable is declared in an outer scope,
+// it can be used in an inner scope
+// But when a variable is declared in an inner scope,
+// it can't be used in an outer scope
+{
+  var baz = "outer baz";
+  var foo = "outer foo";
+  {
+    baz = "modified baz";
+    var foo = "inner foo";
+    print baz;
+    print foo;
+  }
+  print baz;
+  print foo;
+}
+print foo;
