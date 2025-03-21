@@ -1,11 +1,12 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
 
 use crate::expr::Literal;
 
 #[derive(Clone)]
 pub struct Environment {
     values: HashMap<String, Option<Box<Literal>>>,
-    enclosing: Box<Option<Environment>>,
+    enclosing: Option<Rc<RefCell<Environment>>>,
 }
 
 impl Environment {
@@ -13,13 +14,13 @@ impl Environment {
         self.values.insert(name, b);
     }
 
-    pub fn get(&self, name: &String) -> Result<&Option<Box<Literal>>, String> {
-        if self.values.contains_key(name) {
-            return Ok(self.values.get(name).unwrap());
+    pub fn get(&self, name: &String) -> Result<Option<Box<Literal>>, String> {
+        if let Some(val) = self.values.get(name) {
+            return Ok(val.clone());
         }
 
-        if let Some(helper) = &*self.enclosing {
-            return helper.get(name);
+        if let Some(helper) = &self.enclosing {
+            return helper.borrow().get(name).clone();
         }
 
         Err("Undefined variable.".to_string())
@@ -31,8 +32,8 @@ impl Environment {
             return Ok(());
         }
 
-        if let Some(helper) = self.enclosing.as_mut() {
-            helper.assign(s, a)?;
+        if let Some(helper) = &self.enclosing {
+            helper.borrow_mut().assign(s,a)?;
             return Ok(());
         }
 
@@ -40,17 +41,17 @@ impl Environment {
 
     }
 
-    pub fn new_enclosing(env: &Environment) -> Self {
+    pub fn new_enclosing(env: Rc<RefCell<Environment>>) -> Self {
         Self {
-            values: env.clone().values,
-            enclosing: Box::from(None),
+            values: HashMap::new(),
+            enclosing: Some(env),
         }
     }
 
     pub fn new() -> Self {
         Environment {
             values: HashMap::new(),
-            enclosing: Box::from(None),
+            enclosing: None,
         }
     }
 
