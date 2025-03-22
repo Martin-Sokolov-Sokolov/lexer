@@ -1,8 +1,38 @@
 use std::{borrow::Cow, fmt};
 
-use crate::{token::TokenType, visitor::{ExprAccept, ExprVisitor}};
+use crate::{token::{Token, TokenType}, visitor::{ExprAccept, ExprVisitor}};
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum Literal {
+    Number(f64),
+    Str(String),
+    Boolean(bool),
+    Nil,
+}
 
+pub enum Expr {
+    Lit(Literal),
+    Unary(UnaryOp, Box<Expr>),
+    Binary(Box<Expr>, BinaryOp, Box<Expr>),
+    Grouping(Box<Expr>),
+    Variable(String),
+    Assign(String, Box<Expr>),
+    Logical(Box<Expr>, Box<Token>, Box<Expr>),
+}
+
+impl ExprAccept for Expr {
+    fn accept(&self, visitor: &mut dyn ExprVisitor) -> Result<Box<Literal>, String> {
+        match self {
+            Expr::Lit(l) => visitor.visit_literal(l),
+            Expr::Grouping(gr) => visitor.visit_grouping(gr),
+            Expr::Unary(op, b) => visitor.visit_unary(op, b),
+            Expr::Binary(left, op, right) => visitor.visit_binary(op, left, right),
+            Expr::Variable(s) => visitor.visit_variable(s),
+            Expr::Assign(t, v) => visitor.visit_assign(t, v),
+            Expr::Logical(left, op, right) => visitor.visit_logical(left, op, right),
+        }
+    }
+}
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -16,6 +46,7 @@ impl fmt::Display for Expr {
             Expr::Grouping(expr) => write!(f, "(group {})", expr),
             Expr::Variable(s) => write!(f, "{}", s),
             Expr::Assign(t, _) => write!(f, "{}", t),
+            Expr::Logical(_, _, _) => write!(f, ""),
         }
     }
 }
@@ -98,36 +129,6 @@ impl BinaryOp {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Literal {
-    Number(f64),
-    Str(String),
-    Boolean(bool),
-    Nil,
-}
-
 pub fn unescape(s: &str) -> Cow<str> {
     Cow::Borrowed(s.trim_matches('"'))
-}
-
-pub enum Expr {
-    Lit(Literal),
-    Unary(UnaryOp, Box<Expr>),
-    Binary(Box<Expr>, BinaryOp, Box<Expr>),
-    Grouping(Box<Expr>),
-    Variable(String),
-    Assign(String, Box<Expr>),
-}
-
-impl ExprAccept for Expr {
-    fn accept(&self, visitor: &mut dyn ExprVisitor) -> Result<Box<Literal>, String> {
-        match self {
-            Expr::Lit(l) => visitor.visit_literal(l),
-            Expr::Grouping(gr) => visitor.visit_grouping(gr),
-            Expr::Unary(op, b) => visitor.visit_unary(op, b),
-            Expr::Binary(left, op, right) => visitor.visit_binary(op, left, right),
-            Expr::Variable(s) => visitor.visit_variable(s),
-            Expr::Assign(t, v) => visitor.visit_assign(t, v),
-        }
-    }
 }

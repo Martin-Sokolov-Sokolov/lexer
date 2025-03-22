@@ -7,10 +7,12 @@ mod visitor;
 mod stmt;
 mod environment;
 
+use std::cell::RefCell;
 use std::env;
 use std::fs;
 use std::fmt::Write;
 use std::process;
+use std::rc::Rc;
 use environment::Environment;
 use parser::Parser;
 use evaluator::Evaluator;
@@ -56,7 +58,8 @@ fn main() {
         },
         "evaluate" => {
             let env = Environment::new();
-            let mut a = Evaluator::new(env);
+            let p_env = Rc::from(RefCell::from(env));
+            let mut a = Evaluator::new(p_env);
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);
@@ -80,7 +83,8 @@ fn main() {
         }
         "run" => {
             let env = Environment::new();
-            let mut a = Evaluator::new(env);
+            let p_env = Rc::from(RefCell::from(env));
+            let mut a = Evaluator::new(p_env);
             let mut tokenizer = Scanner::new(&file_contents);
             let tokens = tokenizer.scan_tokens();
             let mut parser = Parser::new(tokens);

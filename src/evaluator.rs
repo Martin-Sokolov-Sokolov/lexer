@@ -1,11 +1,14 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::{any::Any, process};
 
 use crate::environment::Environment;
 
+use crate::token::{Token, TokenType};
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator {
-    env: Environment,
+    env: Rc<RefCell<Environment>>,
 }
 
 impl ExprVisitor for Evaluator {
@@ -113,7 +116,7 @@ impl ExprVisitor for Evaluator {
     }
     
     fn visit_variable(&mut self, var_name: &String) -> Result<Box<Literal>, String> {
-        let a= self.env.get(var_name)?;
+        let a= self.env.borrow().get(var_name)?;
 
         if let Some(_val) = a {
             return Ok(Box::from(*_val.clone()));
@@ -124,8 +127,25 @@ impl ExprVisitor for Evaluator {
     
     fn visit_assign(&mut self, s: &String, a: &Box<Expr>) -> Result<Box<Literal>, String> {
         let val = self.evaluate(&**a)?;
-        self.env.assign(s, Some(&val))?;
+        self.env.borrow_mut().assign(s, Some(&val))?;
         return Ok(val);
+    }
+    
+    fn visit_logical(&mut self, left: &Box<Expr>, op: &Box<Token>, right: &Box<Expr>) -> Result<Box<Literal>, String> {
+        let l = self.evaluate(left)?;
+
+        if let TokenType::Or = &op.token_type {
+            if self.is_truthy(&l) {
+                return Ok(l);
+            } 
+        }
+        else if let TokenType::And = &op.token_type {
+            if !self.is_truthy(&l) {
+                return Ok(l);
+            }
+        }
+
+        self.evaluate(&right)
     }
     
 }
@@ -186,7 +206,7 @@ impl StmtVisitor for Evaluator  {
         }
     }
     
-    fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String> {
+    fn visit_declaration(&mut self, id: &String, initializer: &Option<Box<Expr>>) -> Result<(), String> {
         let value = if let Some(expr) = initializer {
             Some(self.evaluate(expr)?)
         }
@@ -194,12 +214,26 @@ impl StmtVisitor for Evaluator  {
             Some(Box::from(Literal::Nil) as Box<Literal>)
         };
 
-        self.env.define(id.to_string(), value);
+        self.env.borrow_mut().define(id.to_string(), value);
         Ok(())
     }
     
     fn visit_block(&mut self, v: &Box<Vec<Stmt>>) -> Result<(), String> {
-        self.execute_block(&v, Environment::new_enclosing(&self.env))
+        let new_env = Rc::new(RefCell::new(Environment::new_enclosing(self.env.clone())));
+        self.execute_block(&v, new_env)
+    }
+    
+    fn visit_if(&mut self, expr: &Box<Expr>, fi: &Box<Stmt>, esl: &Option<Box<Stmt>>) -> Result<(), String> {
+        let c = self.evaluate(expr)?;
+
+        if self.is_truthy(&c) {
+            self.execute(&**fi)?;
+        }
+        else if let Some(else_val) = esl {
+            self.execute(&**else_val)?;
+        }
+
+        Ok(())
     }
     
 }
@@ -218,21 +252,22 @@ impl Evaluator {
         Ok(())
     }
 
-    pub fn execute_block(&mut self, statements: &Vec<Stmt>, env: Environment) -> Result<(), String>{
-        let previous = env.clone();
-        self.env = env;
-        for st in statements {
-            self.execute(st)?;
-        }
+    pub fn execute_block(&mut self, statements: &Vec<Stmt>, new_env: Rc<RefCell<Environment>>) -> Result<(), String> {
+        let previous = self.env.clone();
+        self.env = new_env;
+        
+        let result = statements.iter().try_for_each(|st| self.execute(st));
+        
         self.env = previous;
-        Ok(())
+        result
     }
+    
 
     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
         stmt.accept(self)
     }
 
-    pub fn new(env: Environment) -> Self {
+    pub fn new(env: Rc<RefCell<Environment>>) -> Self {
         Evaluator {
             env
         }

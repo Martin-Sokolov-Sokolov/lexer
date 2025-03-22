@@ -86,19 +86,15 @@ impl <'a> Parser <'a> {
         let token_type = &self.peek().token_type;
         if let TokenType::Number(n) = token_type {
             if self.mat(&[TokenType::Number(*n)]) {
-                if let Some(lit) = &self.previous()?.literal {
-                    if let Some(num_val) = lit.downcast_ref::<f64>() {
-                        return Ok(Expr::Lit(Literal::Number(*num_val)));
-                    }
+                if let Some(Literal::Number(num_val)) = self.previous()?.literal.as_deref() {
+                    return Ok(Expr::Lit(Literal::Number(*num_val)));
                 }
             }
         }
         else if let TokenType::String(s) = token_type {
             if self.mat(&[TokenType::String(s.to_string())]) {
-                if let Some(lit) = &self.previous()?.literal {
-                    if let Some(str_val) = lit.downcast_ref::<String>() {
-                        return Ok(Expr::Lit(Literal::Str(String::from(str_val))));
-                    }
+                if let Some(Literal::Str(str_val)) = &self.previous()?.literal.as_deref() {
+                    return Ok(Expr::Lit(Literal::Str(String::from(str_val))));
                 }
             }
         }
@@ -190,20 +186,23 @@ impl <'a> Parser <'a> {
 
     fn var_declaration(&mut self) -> Result<Stmt, String> {
         let name = self.consume(&TokenType::Identifier, "Expect variable name.".to_string())?.lexeme.clone();
-        let mut initializer: Option<Expr> = None;
+        let mut initializer: Option<Box<Expr>> = None;
         if self.mat(&[TokenType::Equal]) {
-            initializer = Some(self.expression()?);
+            initializer = Some(Box::from(self.expression()?));
         }
         self.consume(&TokenType::SemiColon, "Expect ';' after variable declaration.".to_string())?;
         
         return Ok(Stmt::Declaration { 
-            id: name.to_string(), initializer: initializer 
+            id: name.to_string(), initializer: initializer, 
         });
     }
 
     fn statement(&mut self) -> Result<Stmt, String> {
         if self.mat(&[TokenType::Print]) {
             return self.print_statement();
+        }
+        if self.mat(&[TokenType::If]) {
+            return self.if_statement();
         }
         if self.mat(&[TokenType::LeftBrace]) {
             return Ok(Stmt::Block(Box::from(self.block()?)))
@@ -228,6 +227,21 @@ impl <'a> Parser <'a> {
         return Ok(Stmt::PrintStmt(Box::from(expr)));
     }
 
+    fn if_statement(&mut self) -> Result<Stmt, String> {
+        self.consume(&TokenType::LeftParen, "Expected '(' before expression.".to_string())?;
+        let expr = Box::from(self.expression()?);
+        self.consume(&TokenType::RightParen, "Expected ')' after expression".to_string())?;
+        
+        let if_stmt = Box::from(self.statement()?);
+
+        let mut else_val: Option<Box<Stmt>> = None;
+        if self.mat(&[TokenType::Else]) {
+            else_val = Some(Box::from(self.statement()?));
+        }
+
+        Ok(Stmt::If(expr, if_stmt, else_val))
+    }
+
     fn expression_statement(&mut self) -> Result<Stmt, String> {
         let expr = self.expression()?;
         self.consume(&TokenType::SemiColon, "Expected ';' after expression.".to_string())?;
@@ -235,7 +249,7 @@ impl <'a> Parser <'a> {
     }
     
     fn assignment(&mut self) -> Result<Expr, String> {
-        let expr = self.equality()?;
+        let expr = self.f_or()?;
 
         if self.mat(&[TokenType::Equal]) {
             let _ = self.previous()?;
@@ -250,6 +264,30 @@ impl <'a> Parser <'a> {
         }
 
         Ok(expr)
+    }
+
+    fn f_or(&mut self) -> Result<Expr, String> {
+        let mut expr = self.f_and()?;
+
+        while self.mat(&[TokenType::Or]) {
+            let tok = self.previous()?.clone();
+            let right = self.f_and()?;
+            expr = Expr::Logical(Box::from(expr), Box::from(tok), Box::from(right));
+        }
+
+        return Ok(expr);
+    }
+
+    fn f_and(&mut self) -> Result<Expr, String> {
+        let mut expr = self.equality()?;
+
+        while self.mat(&[TokenType::And]) {
+            let tok = self.previous()?.clone();
+            let right = self.f_and()?;
+            expr = Expr::Logical(Box::from(expr), Box::from(tok), Box::from(right))
+        }
+
+        return Ok(expr);
     }
 
     fn synchronize(&mut self) -> Result<(), String> {
