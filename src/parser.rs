@@ -207,7 +207,20 @@ impl <'a> Parser <'a> {
         if self.mat(&[TokenType::LeftBrace]) {
             return Ok(Stmt::Block(Box::from(self.block()?)))
         }
+        if self.mat(&[TokenType::While]) {
+            return self.fn_while();
+        }
         return self.expression_statement();
+    }
+
+    fn fn_while(&mut self) -> Result<Stmt, String> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'while'".to_string())?;
+        let expr = Box::from(self.expression()?);
+        self.consume(&TokenType::RightParen, "Expect ')' after condition.".to_string())?;
+
+        let statement = Box::from(self.statement()?);
+
+        Ok(Stmt::While(expr, statement))
     }
 
     fn block(&mut self) -> Result<Vec<Stmt>, String> {

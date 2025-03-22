@@ -20,6 +20,7 @@ pub trait StmtVisitor {
     fn visit_declaration(&mut self, id: &String, initializer: &Option<Box<Expr>>) -> Result<(), String>;
     fn visit_block(&mut self, v: &Box<Vec<Stmt>>) -> Result<(), String>;
     fn visit_if(&mut self, expr: &Box<Expr>, fi: &Box<Stmt>, esl: &Option<Box<Stmt>>) -> Result<(), String>;
+    fn visit_while(&mut self, expr: &Box<Expr>, st: &Box<Stmt>) -> Result<(), String>;
 }
 
 pub trait StmtAccept {
