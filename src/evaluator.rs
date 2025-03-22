@@ -188,7 +188,7 @@ impl StmtVisitor for Evaluator  {
         }
     }
     
-    fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String> {
+    fn visit_declaration(&mut self, id: &String, initializer: &Option<Box<Expr>>) -> Result<(), String> {
         let value = if let Some(expr) = initializer {
             Some(self.evaluate(expr)?)
         }
@@ -203,6 +203,19 @@ impl StmtVisitor for Evaluator  {
     fn visit_block(&mut self, v: &Box<Vec<Stmt>>) -> Result<(), String> {
         let new_env = Rc::new(RefCell::new(Environment::new_enclosing(self.env.clone())));
         self.execute_block(&v, new_env)
+    }
+    
+    fn visit_if(&mut self, expr: &Box<Expr>, fi: &Box<Stmt>, esl: &Option<Box<Stmt>>) -> Result<(), String> {
+        let c = self.evaluate(expr)?;
+
+        if self.is_truthy(&c) {
+            self.execute(&**fi)?;
+        }
+        else if let Some(else_val) = esl {
+            self.execute(&**else_val)?;
+        }
+
+        Ok(())
     }
     
 }
@@ -222,12 +235,12 @@ impl Evaluator {
     }
 
     pub fn execute_block(&mut self, statements: &Vec<Stmt>, new_env: Rc<RefCell<Environment>>) -> Result<(), String> {
-        let previous = self.env.clone();  // Preserve the current environment
-        self.env = new_env;               // Switch to the new block environment
+        let previous = self.env.clone();
+        self.env = new_env;
         
-        let result = statements.iter().try_for_each(|st| self.execute(st)); // Execute statements
+        let result = statements.iter().try_for_each(|st| self.execute(st));
         
-        self.env = previous;              // Restore the previous environment
+        self.env = previous;
         result
     }
     

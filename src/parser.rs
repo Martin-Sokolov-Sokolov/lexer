@@ -190,20 +190,23 @@ impl <'a> Parser <'a> {
 
     fn var_declaration(&mut self) -> Result<Stmt, String> {
         let name = self.consume(&TokenType::Identifier, "Expect variable name.".to_string())?.lexeme.clone();
-        let mut initializer: Option<Expr> = None;
+        let mut initializer: Option<Box<Expr>> = None;
         if self.mat(&[TokenType::Equal]) {
-            initializer = Some(self.expression()?);
+            initializer = Some(Box::from(self.expression()?));
         }
         self.consume(&TokenType::SemiColon, "Expect ';' after variable declaration.".to_string())?;
         
         return Ok(Stmt::Declaration { 
-            id: name.to_string(), initializer: initializer 
+            id: name.to_string(), initializer: initializer, 
         });
     }
 
     fn statement(&mut self) -> Result<Stmt, String> {
         if self.mat(&[TokenType::Print]) {
             return self.print_statement();
+        }
+        if self.mat(&[TokenType::If]) {
+            return self.if_statement();
         }
         if self.mat(&[TokenType::LeftBrace]) {
             return Ok(Stmt::Block(Box::from(self.block()?)))
@@ -226,6 +229,21 @@ impl <'a> Parser <'a> {
         let expr = self.expression()?;
         self.consume(&TokenType::SemiColon, "Expect ';' after value.".to_string())?;
         return Ok(Stmt::PrintStmt(Box::from(expr)));
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, String> {
+        self.consume(&TokenType::LeftParen, "Expected '(' before expression.".to_string())?;
+        let expr = Box::from(self.expression()?);
+        self.consume(&TokenType::RightParen, "Expected ')' after expression".to_string())?;
+        
+        let if_stmt = Box::from(self.statement()?);
+
+        let mut else_val: Option<Box<Stmt>> = None;
+        if self.mat(&[TokenType::Else]) {
+            else_val = Some(Box::from(self.statement()?));
+        }
+
+        Ok(Stmt::If(expr, if_stmt, else_val))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, String> {

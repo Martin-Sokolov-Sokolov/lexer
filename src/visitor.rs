@@ -17,8 +17,9 @@ pub trait ExprAccept {
 pub trait StmtVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
     fn visit_print_stmt(&mut self, stmt: &Box<Expr>) -> Result<(), String>;
-    fn visit_declaration(&mut self, id: &String, initializer: &Option<Expr>) -> Result<(), String>;
+    fn visit_declaration(&mut self, id: &String, initializer: &Option<Box<Expr>>) -> Result<(), String>;
     fn visit_block(&mut self, v: &Box<Vec<Stmt>>) -> Result<(), String>;
+    fn visit_if(&mut self, expr: &Box<Expr>, fi: &Box<Stmt>, esl: &Option<Box<Stmt>>) -> Result<(), String>;
 }
 
 pub trait StmtAccept {
