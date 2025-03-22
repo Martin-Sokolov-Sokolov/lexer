@@ -1,6 +1,7 @@
-use std::any::Any;
 use std::borrow::Cow;
 use std::fmt;
+
+use crate::expr::Literal;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
@@ -45,11 +46,11 @@ pub enum TokenType {
     EOF
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
-    pub literal: Option<Box<dyn Any>>,
+    pub literal: Option<Box<Literal>>,
     pub line: usize,
 }
 

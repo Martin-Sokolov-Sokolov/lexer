@@ -4,6 +4,7 @@ use std::{any::Any, process};
 
 use crate::environment::Environment;
 
+use crate::token::{Token, TokenType};
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator {
@@ -128,6 +129,23 @@ impl ExprVisitor for Evaluator {
         let val = self.evaluate(&**a)?;
         self.env.borrow_mut().assign(s, Some(&val))?;
         return Ok(val);
+    }
+    
+    fn visit_logical(&mut self, left: &Box<Expr>, op: &Box<Token>, right: &Box<Expr>) -> Result<Box<Literal>, String> {
+        let l = self.evaluate(left)?;
+
+        if let TokenType::Or = &op.token_type {
+            if self.is_truthy(&l) {
+                return Ok(l);
+            } 
+        }
+        else if let TokenType::And = &op.token_type {
+            if !self.is_truthy(&l) {
+                return Ok(l);
+            }
+        }
+
+        self.evaluate(&right)
     }
     
 }

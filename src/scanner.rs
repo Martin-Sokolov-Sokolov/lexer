@@ -1,6 +1,4 @@
-use std::any::Any;
-use crate::token::{Token, TokenType};
-
+use crate::{expr::Literal, token::{Token, TokenType}};
 
 #[derive(Debug)]
 pub struct Scanner <'a> {
@@ -122,10 +120,10 @@ impl <'a> Scanner <'a> {
     }
 
     fn add_token(&mut self, token_type: TokenType) {
-        self.add_token_helper(token_type, Some(Box::new(String::from("null"))));
+        self.add_token_helper(token_type, Some(Box::new(Literal::Nil)));
     }
 
-    fn add_token_helper(&mut self, token_type: TokenType, literal: Option<Box<dyn Any>>) {
+    fn add_token_helper(&mut self, token_type: TokenType, literal: Option<Box<Literal>>) {
         let text: &String = &self.source.chars().take(self.current).skip(self.start).collect();
         self.tokens.push(Token {token_type, lexeme: String::from(text), literal, line:self.line});
     }
@@ -141,10 +139,10 @@ impl <'a> Scanner <'a> {
         else {
             self.advance();
     
-            let text: String = self.source.chars().take(self.current).skip(self.start).collect();
-            let lit = text.replace('"', "");
+            let text_literal: String = self.source.chars().take(self.current).skip(self.start).collect();
+            let literal = text_literal.replace('"', "");
     
-            self.add_token_helper(TokenType::String(text), Some(Box::new(lit)));
+            self.add_token_helper(TokenType::String(text_literal), Some(Box::new(Literal::Str(literal))));
         }
     }
     
@@ -169,7 +167,7 @@ impl <'a> Scanner <'a> {
 
         let num_str = &self.source[self.start..self.current];
         let n = normalize_number_string(num_str);
-        self.add_token_helper(TokenType::Number(n), Some(Box::new(n)));
+        self.add_token_helper(TokenType::Number(n), Some(Box::new(Literal::Number(n))));
     }
 
     fn make_identifier_alternative(&mut self) {
