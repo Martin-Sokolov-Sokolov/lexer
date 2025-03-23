@@ -210,7 +210,65 @@ impl <'a> Parser <'a> {
         if self.mat(&[TokenType::While]) {
             return self.fn_while();
         }
+        if self.mat(&[TokenType::For]) {
+            return self.for_statement()
+        }
         return self.expression_statement();
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, String> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'for'.".to_string())?;
+
+        let mut init: Option<Stmt> = None;
+        if self.mat(&[TokenType::SemiColon]) {
+
+        }
+        else if self.mat(&[TokenType::Var]) {
+            init = Some(self.var_declaration()?);
+        }
+        else {
+            init = Some(self.expression_statement()?);
+        }
+
+        let mut condition: Option<Expr> = None;
+        if !self.check(&TokenType::SemiColon) {
+            condition = Some(self.expression()?);
+        }
+        self.consume(&TokenType::SemiColon, "Expect ';' after loop condition.".to_string())?;
+
+        let mut increment: Option<Expr> = None;
+        if !self.check(&TokenType::RightParen) {
+            increment = Some(self.expression()?);
+
+        }
+        self.consume(&TokenType::RightParen, "Expect ')' after for clauses.".to_string())?;
+
+        let mut stmt = self.statement()?;
+
+        if let Some(inc_val) = increment {
+            let mut v = Vec::new();
+            v.push(stmt);
+            v.push(Stmt::ExprStmt(Box::from(inc_val)));
+            stmt = Stmt::Block(Box::from(v));
+        }
+
+        if let Some(_) = condition {
+
+        }
+        else {
+            condition = Some(Expr::Lit(Literal::Boolean(true)));
+        }
+        stmt = Stmt::While(Box::from(condition.unwrap()), Box::from(stmt));
+
+        if let Some(init_val) = init {
+            let mut temp = Vec::new();
+            temp.push(init_val);
+            temp.push(stmt);
+            stmt = Stmt::Block(Box::from(Vec::from(temp)))
+        }
+
+        return Ok(stmt);
+
     }
 
     fn fn_while(&mut self) -> Result<Stmt, String> {
