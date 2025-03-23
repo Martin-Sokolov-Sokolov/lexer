@@ -236,6 +236,17 @@ impl StmtVisitor for Evaluator  {
         Ok(())
     }
     
+    fn visit_while(&mut self, expr: &Box<Expr>, st: &Box<Stmt>) -> Result<(), String> {
+        let mut cond = self.evaluate(expr)?;
+
+        while self.is_truthy(&cond) {
+            self.execute(&st)?;
+            cond = self.evaluate(expr)?;
+        }
+
+        Ok(())
+    }
+    
 }
 
 impl Evaluator {
