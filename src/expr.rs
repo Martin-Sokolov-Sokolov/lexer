@@ -10,10 +10,12 @@ pub enum Literal {
     Nil,
 }
 
+#[derive(Clone)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
+    Call(Box<Expr>, Box<Token>, Box<Vec<Expr>>),
     Grouping(Box<Expr>),
     Variable(String),
     Assign(String, Box<Expr>),
@@ -30,6 +32,7 @@ impl ExprAccept for Expr {
             Expr::Variable(s) => visitor.visit_variable(s),
             Expr::Assign(t, v) => visitor.visit_assign(t, v),
             Expr::Logical(left, op, right) => visitor.visit_logical(left, op, right),
+            Expr::Call(callee, paren, arguments) => visitor.visit_call(callee, paren, arguments),
         }
     }
 }
@@ -47,11 +50,12 @@ impl fmt::Display for Expr {
             Expr::Variable(s) => write!(f, "{}", s),
             Expr::Assign(t, _) => write!(f, "{}", t),
             Expr::Logical(_, _, _) => write!(f, ""),
+            Expr::Call(_, _, _) => write!(f, ""), 
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UnaryOp {
     Negate,
     Not,   
@@ -76,7 +80,7 @@ impl UnaryOp {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BinaryOp {
     Equals,
     EqualEqual,

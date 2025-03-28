@@ -1,14 +1,36 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{any::Any, process};
 
 use crate::environment::Environment;
 
+use crate::lox_callable::LoxCallable;
 use crate::token::{Token, TokenType};
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator {
     env: Rc<RefCell<Environment>>,
+    globals: Rc<RefCell<Environment>>,
+}
+
+
+impl LoxCallable for Literal {
+    fn callq(&self, _: &mut Evaluator, _: Vec<Expr>) -> Box<Literal> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        Box::from(Literal::Number(now.as_secs_f64()))
+    }
+    
+    fn arrity(&self) -> usize {
+        0
+    }
+
+    fn to_string(&self) -> String {
+        "<native fn>".to_string()
+    }
+
 }
 
 impl ExprVisitor for Evaluator {
@@ -148,7 +170,26 @@ impl ExprVisitor for Evaluator {
         self.evaluate(&right)
     }
     
+    fn visit_call(&mut self, callee: &Box<Expr>, paren: &Box<Token>, arguments: &Box<Vec<Expr>>) -> Result<Box<Literal>, String> {
+        let cal = self.evaluate(&callee)?;
+
+        let mut args= Vec::new();
+
+        for arg in arguments.iter() {
+            args.push(*self.evaluate(arg)?);
+        }
+
+        if args.len() != cal.arrity() {
+            let err = format!("Expected {} arguments but got {}.", cal.arrity(), args.len());
+            return Err(err);
+        }
+
+
+        Ok(cal.callq(self, arguments.clone().to_vec()))
+    }
+    
 }
+
 
 
 impl Evaluator {
@@ -278,9 +319,12 @@ impl Evaluator {
         stmt.accept(self)
     }
 
-    pub fn new(env: Rc<RefCell<Environment>>) -> Self {
+    pub fn new(globals: Rc<RefCell<Environment>>) -> Self {
+        let b: Option<Box<Literal>>= None;
+        globals.borrow_mut().define("clock".to_string(), Some(Box::from(Literal::Nil)));
         Evaluator {
-            env
+            env: globals.clone(),
+            globals
         }
     }
 }
