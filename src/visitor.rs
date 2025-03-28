@@ -8,6 +8,7 @@ pub trait ExprVisitor {
     fn visit_variable(&mut self, s: &String) -> Result<Box<Literal>, String>;
     fn visit_assign(&mut self, t: &String, v: &Box<Expr>) -> Result<Box<Literal>, String>;
     fn visit_logical(&mut self, left: &Box<Expr>, op: &Box<Token>, right: &Box<Expr>) -> Result<Box<Literal>, String>;
+    fn visit_call(&mut self, callee: &Box<Expr>, paren: &Box<Token>, arguments: &Box<Vec<Expr>>) -> Result<Box<Literal>, String>;
 }
 
 pub trait ExprAccept {
