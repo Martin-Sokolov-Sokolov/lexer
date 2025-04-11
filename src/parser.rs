@@ -1,4 +1,4 @@
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, token::{Token, TokenType}};
+use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::{FunctionStmt, Stmt}, token::{Token, TokenType}};
 
 pub struct Parser <'a> {
     tokens: &'a Vec<Token>,
@@ -210,6 +210,9 @@ impl <'a> Parser <'a> {
     }
 
     fn declaration(&mut self) -> Result<Stmt, String> {
+        if self.mat(&[TokenType::Fun]) {
+            return self.function("fun".to_string());
+        }
         if self.mat(&[TokenType::Var]) {
             return self.var_declaration();
         }
@@ -221,6 +224,35 @@ impl <'a> Parser <'a> {
             self.synchronize()?;
             Err(err)
         })
+    }
+
+    fn function(&mut self, kind: String) -> Result<Stmt, String> {
+        let name = self.consume(&TokenType::Identifier, format!("Expect {kind} name."))?.clone();
+        self.consume(&TokenType::LeftParen, format!("Expect '(' after {kind} name."))?;
+        let mut parameters = Vec::new();
+
+        if !self.check(&TokenType::RightParen) {
+
+            loop {
+                if parameters.len() >= 255 {
+                    return Err("Can't have more than 255 parameters.".to_string());
+                }
+
+                let token = self.consume(&TokenType::Identifier, "Expect parameter name.".to_string())?.clone();
+                parameters.push(token);
+
+                if !self.mat(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        self.consume(&TokenType::RightParen, "Expect ')' after parameters.".to_string())?;
+
+        self.consume(&TokenType::LeftBrace, format!("Expect '{{' before {kind} body."))?;
+        let body = self.block()?;
+        let fun_stmt = FunctionStmt::new(name, parameters, body);
+
+        Ok(Stmt::Function(Box::from(fun_stmt)))
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, String> {

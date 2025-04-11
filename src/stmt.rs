@@ -1,12 +1,27 @@
-use crate::{expr::Expr, visitor::{StmtAccept, StmtVisitor}};
+use crate::{expr::Expr, token::Token, visitor::{StmtAccept, StmtVisitor}};
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt{
     ExprStmt(Box<Expr>),
     PrintStmt(Box<Expr>),
     Declaration{id: String, initializer: Option<Box<Expr>>},
     Block(Box<Vec<Stmt>>),
+    Function(Box<FunctionStmt>),
     If(Box<Expr>, Box<Stmt>, Option<Box<Stmt>>),
     While(Box<Expr>, Box<Stmt>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionStmt {
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Vec<Stmt>,
+}
+
+impl FunctionStmt {
+    pub fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> Self {
+        FunctionStmt { name, params, body }
+    }
 }
 
 impl StmtAccept for Stmt  {
@@ -18,6 +33,7 @@ impl StmtAccept for Stmt  {
             Stmt::Block(v) => visitor.visit_block(v),
             Stmt::If(cond, fi, esl) => visitor.visit_if(cond, fi, esl),
             Stmt::While(expr, st) => visitor.visit_while(expr, st),
+            Stmt::Function(fun_stmt) => visitor.visit_function(fun_stmt),
         }
     }
 }
