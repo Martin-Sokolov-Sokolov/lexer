@@ -1,16 +1,23 @@
-use std::{borrow::Cow, fmt};
+use std::{borrow::Cow, fmt, path::Display};
 
-use crate::{token::{Token, TokenType}, visitor::{ExprAccept, ExprVisitor}};
+use crate::{lox_function::{LoxAnonymous, LoxFunction}, token::{Token, TokenType}, visitor::{ExprAccept, ExprVisitor}};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Number(f64),
     Str(String),
     Boolean(bool),
+    LoxCallable(LoxCallables),
     Nil,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum LoxCallables {
+    LoxFunction(Box<LoxFunction>),
+    LoxAnonymous(Box<LoxAnonymous>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Lit(Literal),
     Unary(UnaryOp, Box<Expr>),
@@ -44,13 +51,14 @@ impl fmt::Display for Expr {
             Expr::Lit(Literal::Nil) => write!(f, "nil"),
             Expr::Lit(Literal::Str(s)) => write!(f, "{}", unescape(s)),
             Expr::Lit(Literal::Number(n)) => write!(f, "{n:?}"),
+            Expr::Lit(Literal::LoxCallable(lc)) => write!(f, "{lc}"), 
             Expr::Binary(left, operator, right) => write!(f, "({} {} {})", operator, left, right),
             Expr::Unary(operator, right) => write!(f, "({} {})", operator, right),
             Expr::Grouping(expr) => write!(f, "(group {})", expr),
             Expr::Variable(s) => write!(f, "{}", s),
             Expr::Assign(t, _) => write!(f, "{}", t),
             Expr::Logical(_, _, _) => write!(f, ""),
-            Expr::Call(_, _, _) => write!(f, ""), 
+            Expr::Call(a, b, c) => write!(f, "ads"), 
         }
     }
 }
@@ -129,6 +137,15 @@ impl BinaryOp {
             TokenType::Star => Some(BinaryOp::Multiply),
             TokenType::Slash => Some(BinaryOp::Divide),
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for LoxCallables {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LoxCallables::LoxFunction(lc) => write!(f, "<fn {}>", lc.declaration.name.lexeme),
+            LoxCallables::LoxAnonymous(la) => write!(f, "<anonymous fn>"),
         }
     }
 }

@@ -5,33 +5,18 @@ use std::{any::Any, process};
 
 use crate::environment::Environment;
 
+use crate::expr::LoxCallables;
 use crate::lox_callable::LoxCallable;
+use crate::lox_function::{self, LoxAnonymous, LoxFunction};
+use crate::stmt::FunctionStmt;
 use crate::token::{Token, TokenType};
 use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::Stmt, visitor::{ExprAccept, ExprVisitor, StmtAccept, StmtVisitor}};
 
 pub struct Evaluator {
     env: Rc<RefCell<Environment>>,
-    globals: Rc<RefCell<Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
 }
 
-
-impl LoxCallable for Literal {
-    fn callq(&self, _: &mut Evaluator, _: Vec<Expr>) -> Box<Literal> {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards");
-        Box::from(Literal::Number(now.as_secs_f64()))
-    }
-    
-    fn arrity(&self) -> usize {
-        0
-    }
-
-    fn to_string(&self) -> String {
-        "<native fn>".to_string()
-    }
-
-}
 
 impl ExprVisitor for Evaluator {
     fn visit_literal(&self, expr: &Literal) -> Result<Box<Literal>, String> {
@@ -40,6 +25,7 @@ impl ExprVisitor for Evaluator {
             Literal::Boolean(b) => Ok(Box::from(Literal::Boolean(*b))),
             Literal::Number(n) => Ok(Box::from(Literal::Number(*n))),
             Literal::Str(str) => Ok(Box::new(Literal::Str(String::from(str)))),
+            Literal::LoxCallable(lc) => Ok(Box::from(Literal::LoxCallable(lc.clone()))),
         }
     }
 
@@ -171,21 +157,30 @@ impl ExprVisitor for Evaluator {
     }
     
     fn visit_call(&mut self, callee: &Box<Expr>, paren: &Box<Token>, arguments: &Box<Vec<Expr>>) -> Result<Box<Literal>, String> {
-        let cal = self.evaluate(&callee)?;
+        let callee = *self.evaluate(&callee)?;
 
         let mut args= Vec::new();
-
         for arg in arguments.iter() {
             args.push(*self.evaluate(arg)?);
         }
 
-        if args.len() != cal.arrity() {
-            let err = format!("Expected {} arguments but got {}.", cal.arrity(), args.len());
+        let function = match callee {
+            Literal::LoxCallable(lit) => Ok(lit),
+            _ => Err("Error".to_string()),
+        };
+
+        if args.len() != function.clone()?.arrity() {
+            let err = format!("Expected {} arguments but got {}.", function?.arrity(), args.len());
             return Err(err);
         }
 
+        let res = function?.callq(self, args);
 
-        Ok(cal.callq(self, arguments.clone().to_vec()))
+        return match res {
+            Err(e) => Err(e),
+            Ok(Some(r)) => Ok(r),
+            Ok(None) => Ok(Box::from(Literal::Nil)),
+        };
     }
     
 }
@@ -228,6 +223,7 @@ impl Evaluator {
             Literal::Boolean(val) => println!("{}", val),
             Literal::Number(val) => println!("{}", val),
             Literal::Str(val) => println!("{}", val),
+            Literal::LoxCallable(lc) => println!("{}", lc),
         }
     }
 }
@@ -288,6 +284,13 @@ impl StmtVisitor for Evaluator  {
         Ok(())
     }
     
+    fn visit_function(&mut self, fun_stmt: &Box<FunctionStmt>) -> Result<(), String> {
+        let function = LoxFunction::new(*fun_stmt.clone());
+        self.env.borrow_mut().define(fun_stmt.name.lexeme.clone(),
+                                    Some(Box::from(Literal::LoxCallable(LoxCallables::LoxFunction(Box::from(function))))));
+        Ok(())
+    }
+    
 }
 
 impl Evaluator {
@@ -320,8 +323,16 @@ impl Evaluator {
     }
 
     pub fn new(globals: Rc<RefCell<Environment>>) -> Self {
-        let b: Option<Box<Literal>>= None;
-        globals.borrow_mut().define("clock".to_string(), Some(Box::from(Literal::Nil)));
+        globals.borrow_mut().define("clock".to_owned(),
+            Some(Box::from(Literal::LoxCallable(LoxCallables::LoxAnonymous(
+                Box::new(LoxAnonymous::new(|_interpreter, _arguments| {
+                    Ok(Some(Box::from(Literal::Number(
+                        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64(),
+                    ))))
+                }, || 0,
+                )),
+            ))),
+        ));
         Evaluator {
             env: globals.clone(),
             globals

@@ -7,6 +7,7 @@ mod visitor;
 mod stmt;
 mod environment;
 mod lox_callable;
+mod lox_function;
 
 use std::cell::RefCell;
 use std::env;
