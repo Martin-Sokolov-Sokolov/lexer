@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{evaluator::{RuntimeError, RuntimeException}, expr::Literal, token::Token};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Environment {
     values: HashMap<String, Option<Box<Literal>>>,
     enclosing: Option<Rc<RefCell<Environment>>>,
@@ -40,17 +40,10 @@ impl Environment {
         return Err(RuntimeException::RuntimeError(RuntimeError::new(name, format!("Undefined variable '{}'.", name.lexeme).as_str())));
     }
 
-    pub fn new_enclosing(env: Rc<RefCell<Environment>>) -> Self {
-        Self {
-            values: HashMap::new(),
-            enclosing: Some(env),
-        }
-    }
-
-    pub fn new() -> Self {
+    pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Environment {
             values: HashMap::new(),
-            enclosing: None,
+            enclosing: enclosing.map(|e| Rc::clone(&e)),
         }
     }
 

@@ -254,7 +254,7 @@ impl StmtVisitor for Evaluator  {
     }
     
     fn visit_block(&mut self, v: &Box<Vec<Stmt>>) -> Result<(), RuntimeException> {
-        let new_env = Rc::new(RefCell::new(Environment::new_enclosing(self.env.clone())));
+        let new_env = Rc::new(RefCell::new(Environment::new(Some(self.env.clone()))));
         self.execute_block(&v, new_env)
     }
     
@@ -283,7 +283,7 @@ impl StmtVisitor for Evaluator  {
     }
     
     fn visit_function(&mut self, fun_stmt: &Box<FunctionStmt>) -> Result<(), RuntimeException> {
-        let function = LoxFunction::new(*fun_stmt.clone());
+        let function = LoxFunction::new(*fun_stmt.clone(), self.env.clone());
         self.env.borrow_mut().define(fun_stmt.name.lexeme.clone(),
                                     Some(Box::from(Literal::LoxCallable(LoxCallables::LoxFunction(Box::from(function))))));
         Ok(())
