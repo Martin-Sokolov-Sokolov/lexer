@@ -59,7 +59,7 @@ fn main() {
             }
         },
         "evaluate" => {
-            let env = Environment::new();
+            let env = Environment::new(None);
             let p_env = Rc::from(RefCell::from(env));
             let mut a = Evaluator::new(p_env);
             let mut tokenizer = Scanner::new(&file_contents);
@@ -84,7 +84,7 @@ fn main() {
             }
         }
         "run" => {
-            let env = Environment::new();
+            let env = Environment::new(None);
             let p_env = Rc::from(RefCell::from(env));
             let mut a = Evaluator::new(p_env);
             let mut tokenizer = Scanner::new(&file_contents);

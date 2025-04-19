@@ -1,9 +1,9 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 
-use crate::expr::Literal;
+use crate::{evaluator::{RuntimeError, RuntimeException}, expr::Literal, token::Token};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Environment {
     values: HashMap<String, Option<Box<Literal>>>,
     enclosing: Option<Rc<RefCell<Environment>>>,
@@ -14,8 +14,8 @@ impl Environment {
         self.values.insert(name, b);
     }
 
-    pub fn get(&self, name: &String) -> Result<Option<Box<Literal>>, String> {
-        if let Some(val) = self.values.get(name) {
+    pub fn get(&self, name: &Token) -> Result<Option<Box<Literal>>, RuntimeException> {
+        if let Some(val) = self.values.get(&name.lexeme) {
             return Ok(val.clone());
         }
 
@@ -23,35 +23,27 @@ impl Environment {
             return helper.borrow().get(name).clone();
         }
 
-        Err("Undefined variable.".to_string())
-    }
+        return Err(RuntimeException::RuntimeError(RuntimeError::new(name, format!("Undefined variable '{}'", name.lexeme).as_str())));    }
 
-    pub fn assign(&mut self, s: &String, a: Option<&Box<Literal>>) -> Result<(), String>{
-        if self.values.contains_key(s) {
-            self.values.insert(s.to_string(), a.cloned());
+    pub fn assign(&mut self, name: &Token, value: Option<&Box<Literal>>) -> Result<(), RuntimeException>{
+
+        if self.values.contains_key(&name.lexeme) {
+            self.values.insert(name.lexeme.clone(), value.cloned());
             return Ok(());
         }
 
         if let Some(helper) = &self.enclosing {
-            helper.borrow_mut().assign(s,a)?;
+            helper.borrow_mut().assign(&name, value)?;
             return Ok(());
         }
 
-        return Err(format!("Undefined variable '{}'.", s));
-
+        return Err(RuntimeException::RuntimeError(RuntimeError::new(name, format!("Undefined variable '{}'.", name.lexeme).as_str())));
     }
 
-    pub fn new_enclosing(env: Rc<RefCell<Environment>>) -> Self {
-        Self {
-            values: HashMap::new(),
-            enclosing: Some(env),
-        }
-    }
-
-    pub fn new() -> Self {
+    pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Environment {
             values: HashMap::new(),
-            enclosing: None,
+            enclosing: enclosing.map(|e| Rc::clone(&e)),
         }
     }
 

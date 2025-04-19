@@ -1,4 +1,4 @@
-use crate::{expr::Expr, token::Token, visitor::{StmtAccept, StmtVisitor}};
+use crate::{evaluator::RuntimeException, expr::Expr, token::Token, visitor::{StmtAccept, StmtVisitor}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt{
@@ -9,6 +9,7 @@ pub enum Stmt{
     Function(Box<FunctionStmt>),
     If(Box<Expr>, Box<Stmt>, Option<Box<Stmt>>),
     While(Box<Expr>, Box<Stmt>),
+    Return(Box<Token>, Option<Box<Expr>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,7 +26,7 @@ impl FunctionStmt {
 }
 
 impl StmtAccept for Stmt  {
-    fn accept <'a> (&self, visitor: &'a mut dyn StmtVisitor) -> Result<(), String> {
+    fn accept <'a> (&self, visitor: &'a mut dyn StmtVisitor) -> Result<(), RuntimeException> {
         match self {
             Stmt::ExprStmt(es) => visitor.visit_expression_stmt(es),
             Stmt::PrintStmt(ps) => visitor.visit_print_stmt(ps),
@@ -34,6 +35,7 @@ impl StmtAccept for Stmt  {
             Stmt::If(cond, fi, esl) => visitor.visit_if(cond, fi, esl),
             Stmt::While(expr, st) => visitor.visit_while(expr, st),
             Stmt::Function(fun_stmt) => visitor.visit_function(fun_stmt),
+            Stmt::Return(tok, exp) => visitor.visit_return(tok, exp),
         }
     }
 }
