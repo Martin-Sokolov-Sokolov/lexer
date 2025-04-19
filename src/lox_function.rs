@@ -45,7 +45,7 @@ impl LoxCallable for LoxCallables {
 
 impl LoxCallable for LoxFunction {
     fn callq(&self, evaluator: &mut Evaluator, arguments: Vec<Literal>) -> Result<Option<Box<Literal>>, RuntimeException> {
-        let mut env = Environment::new(Some(evaluator.globals.clone()));
+        let mut env = Environment::new(Some(self.closure.clone()));
         for i in 0..self.declaration.params.len() {
             env.define(self.declaration.params[i].clone().lexeme, Some(Box::from(arguments[i].clone())));
         }
