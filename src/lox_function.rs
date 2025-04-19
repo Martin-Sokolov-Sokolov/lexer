@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{environment::Environment, evaluator::Evaluator, expr::{Literal, LoxCallables}, lox_callable::LoxCallable, stmt::FunctionStmt};
+use crate::{environment::Environment, evaluator::{Evaluator, RuntimeException}, expr::{Literal, LoxCallables}, lox_callable::LoxCallable, stmt::FunctionStmt};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct LoxFunction {
@@ -12,7 +12,7 @@ pub struct LoxAnonymous {
     callq: fn(
         &mut Evaluator,
         Vec<Literal>,
-    ) -> Result<Option<Box<Literal>>, String>,
+    ) -> Result<Option<Box<Literal>>, RuntimeException>,
     arrity: fn() -> usize,
 }
 
@@ -23,7 +23,7 @@ impl LoxFunction {
 }
 
 impl LoxCallable for LoxCallables {
-    fn callq(&self, evaluator: &mut Evaluator, arguments: Vec<Literal>) -> Result<Option<Box<Literal>>, String> {
+    fn callq(&self, evaluator: &mut Evaluator, arguments: Vec<Literal>) -> Result<Option<Box<Literal>>, RuntimeException> {
         match self {
             LoxCallables::LoxFunction(lc) => lc.callq(evaluator, arguments),
             LoxCallables::LoxAnonymous(la) => (la.callq)(evaluator, arguments),
@@ -43,7 +43,7 @@ impl LoxCallable for LoxCallables {
 }
 
 impl LoxCallable for LoxFunction {
-    fn callq(&self, evaluator: &mut Evaluator, arguments: Vec<Literal>) -> Result<Option<Box<Literal>>, String> {
+    fn callq(&self, evaluator: &mut Evaluator, arguments: Vec<Literal>) -> Result<Option<Box<Literal>>, RuntimeException> {
         let mut env = Environment::new_enclosing(evaluator.globals.clone());
         for i in 0..self.declaration.params.len() {
             env.define(self.declaration.params[i].clone().lexeme, Some(Box::from(arguments[i].clone())));
@@ -67,7 +67,7 @@ impl LoxAnonymous {
         callq: fn(
             &mut Evaluator,
             Vec<Literal>,
-        ) -> Result<Option<Box<Literal>>, String>,
+        ) -> Result<Option<Box<Literal>>, RuntimeException>,
         arrity: fn() -> usize,
     ) -> LoxAnonymous {
         LoxAnonymous {

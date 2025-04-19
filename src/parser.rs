@@ -1,4 +1,4 @@
-use crate::{expr::{BinaryOp, Expr, Literal, UnaryOp}, stmt::{FunctionStmt, Stmt}, token::{Token, TokenType}};
+use crate::{expr::{Expr, Literal}, stmt::{FunctionStmt, Stmt}, token::{Token, TokenType}};
 
 pub struct Parser <'a> {
     tokens: &'a Vec<Token>,
@@ -21,7 +21,7 @@ impl <'a> Parser <'a> {
         let mut expr = self.comparison()?;
 
         while self.mat(&[TokenType::BangEqual, TokenType::EqualEqual]) {
-            let operator = BinaryOp::from_token_type(&self.previous()?.token_type).unwrap();
+            let operator = Box::from(self.previous()?.clone());
             let right = self.comparison()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -31,7 +31,7 @@ impl <'a> Parser <'a> {
     fn comparison(&mut self) -> Result<Expr, String> {
         let mut expr = self.term()?;
         while self.mat(&[TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual]) {
-            let operator = BinaryOp::from_token_type(&self.previous()?.token_type).unwrap();
+            let operator = Box::from(self.previous()?.clone());
             let right = self.term()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -41,7 +41,7 @@ impl <'a> Parser <'a> {
     fn term(&mut self) -> Result<Expr, String> {
         let mut expr = self.factor()?;
         while self.mat(&[TokenType::Minus, TokenType::Plus]) {
-            let operator = BinaryOp::from_token_type(&self.previous()?.token_type).unwrap();
+            let operator = Box::from(self.previous()?.clone());
             let right = self.factor()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -51,7 +51,7 @@ impl <'a> Parser <'a> {
     fn factor(&mut self) -> Result<Expr, String> {
         let mut expr = self.unary()?;
         while self.mat(&[TokenType::Star, TokenType::Slash]) {
-            let operator = BinaryOp::from_token_type(&self.previous()?.token_type).unwrap();
+            let operator = Box::from(self.previous()?.clone());
             let right = self.unary()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -60,7 +60,7 @@ impl <'a> Parser <'a> {
 
     fn unary(&mut self) -> Result<Expr, String> {
         if self.mat(&[TokenType::Minus, TokenType::Bang]) {
-            let operator = UnaryOp::from_token_type(&self.previous()?.token_type).unwrap();
+            let operator = Box::from(self.previous()?.clone());
             let right = self.unary()?;
             return Ok(Expr::Unary(operator, Box::new(right)));
         }
@@ -138,7 +138,7 @@ impl <'a> Parser <'a> {
             }
         }
         else if self.mat(&[TokenType::Identifier]) {
-            return Ok(Expr::Variable(self.previous()?.lexeme.to_string()));
+            return Ok(Expr::Variable(Box::from(self.previous()?.clone())));
         }
 
         let a = self.peek();
@@ -284,7 +284,23 @@ impl <'a> Parser <'a> {
         if self.mat(&[TokenType::For]) {
             return self.for_statement()
         }
+        if self.mat(&[TokenType::Return]) {
+            return self.return_statement();
+        }
         return self.expression_statement();
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, String> {
+        let tok = Box::from(self.previous()?.clone());
+        let mut value = None;
+
+        if !self.check(&TokenType::SemiColon) {
+            value = Some(Box::from(self.expression()?));
+        }
+
+        self.consume(&TokenType::SemiColon, "Expect ';' after return value.".to_string())?;
+
+        return Ok(Stmt::Return(tok, value))
     }
 
     fn for_statement(&mut self) -> Result<Stmt, String> {
@@ -394,12 +410,12 @@ impl <'a> Parser <'a> {
         let expr = self.f_or()?;
 
         if self.mat(&[TokenType::Equal]) {
-            let _ = self.previous()?;
+            let _ = Box::from(self.previous()?.clone());
             let val = self.assignment()?;
 
             match expr {
-                Expr::Variable(t) => {
-                    return Ok(Expr::Assign(t, Box::from(val)));
+                Expr::Variable(var_name) => {
+                    return Ok(Expr::Assign(var_name, Box::from(val)));
                 },
                 _ => return Err("Invalid assignment target.".to_string()),
             }

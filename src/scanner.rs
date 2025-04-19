@@ -27,7 +27,7 @@ impl <'a> Scanner <'a> {
             self.start = self.current;
             self.scan_token_alternative();
         }
-        self.tokens.push(Token { token_type: TokenType::EOF, lexeme: "null".to_string(), literal: None, line: 1 });
+        self.tokens.push(Token { token_type: TokenType::EOF, lexeme: "".to_string(), literal: None, line: 1 });
 
         &self.tokens
     }
